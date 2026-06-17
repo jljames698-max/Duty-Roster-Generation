@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>I MSB / I MEF CE Duty Roster Generator</title>
+<!-- ExcelJS (for formatted .xlsx export + reading uploaded rosters). If the
+     network blocks this CDN, the app still works and falls back to CSV export. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+  :root {
+    --navy-900:#0b1220; --navy-800:#101a2e; --navy-700:#16233d; --navy-600:#1d2d4d;
+    --gold-400:#f5c542; --gold-500:#e0a82e; --text:#e5e7eb; --muted:#9aa6bf;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--navy-900); color:var(--text);
+         font-family: 'Segoe UI', system-ui, Arial, sans-serif; font-size:14px; }
+  header { background:var(--navy-800); border-bottom:1px solid var(--navy-600); }
+  .bar { max-width:1200px; margin:0 auto; padding:12px 16px; display:flex;
+         align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand .lt { color:var(--gold-400); font-weight:900; font-size:18px; }
+  .brand small { color:var(--muted); display:block; }
+  nav { max-width:1200px; margin:0 auto; padding:0 16px; display:flex; gap:4px; }
+  nav button { background:none; border:none; border-bottom:2px solid transparent;
+    color:var(--muted); padding:10px 16px; font-weight:600; cursor:pointer; font-size:14px; }
+  nav button.active { color:var(--gold-400); border-bottom-color:var(--gold-500); }
+  main { max-width:1200px; margin:0 auto; padding:20px 16px 60px; }
+  .card { background:var(--navy-800); border:1px solid var(--navy-600); border-radius:10px;
+          padding:16px; margin-bottom:16px; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+  h2 { margin:0 0 12px; font-size:18px; }
+  h3 { margin:0 0 10px; font-size:15px; }
+  label.lbl { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+              color:var(--muted); font-weight:700; margin-bottom:4px; }
+  select, input, textarea { background:var(--navy-900); border:1px solid var(--navy-600);
+    color:var(--text); border-radius:6px; padding:8px 10px; font-size:14px; }
+  select:focus, input:focus, textarea:focus { outline:none; border-color:var(--gold-500); }
+  .btn { padding:9px 16px; border-radius:7px; font-weight:700; cursor:pointer; border:1px solid transparent; font-size:14px; }
+  .btn-primary { background:var(--gold-500); color:var(--navy-900); }
+  .btn-primary:hover { background:var(--gold-400); }
+  .btn-ghost { background:var(--navy-700); color:var(--text); border-color:var(--navy-600); }
+  .btn-ghost:hover { background:var(--navy-600); }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+  .grid { display:grid; gap:14px; }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); }
+  .grid-2 { grid-template-columns: 1fr 2fr; }
+  @media (max-width: 900px){ .grid-2 { grid-template-columns:1fr; } }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { border:1px solid var(--navy-600); padding:5px 7px; text-align:left; }
+  thead th { background:var(--navy-700); }
+  .row-weekend { background:rgba(255,255,0,.16); color:#fff; }
+  .row-holiday { background:rgba(255,192,0,.22); color:#fff; }
+  .row-super { background:#000; color:#fff; }
+  .row-weekend td, .row-holiday td { color:#f1f1f1; }
+  .muted { color:var(--muted); }
+  .flex-between { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .pill { font-size:12px; padding:2px 8px; border-radius:999px; background:var(--navy-700); }
+  .grade { font-size:34px; font-weight:900; }
+  .gA{color:#4ade80;} .gB{color:#86efac;} .gC{color:#facc15;} .gD{color:#fb923c;} .gF{color:#f87171;}
+  .bar2 { height:8px; background:var(--navy-900); border-radius:6px; overflow:hidden; margin:8px 0; }
+  .bar2 > div { height:100%; }
+  .cellsel { background:transparent; border:none; color:inherit; width:100%; font-weight:600; font-size:12px; cursor:pointer; }
+  .cellsel:focus { outline:1px solid var(--gold-500); border-radius:4px; }
+  .toast { position:fixed; bottom:18px; right:18px; background:var(--navy-700);
+           border:1px solid var(--gold-500); padding:12px 16px; border-radius:8px; display:none; z-index:50; }
+  footer { text-align:center; color:var(--muted); font-size:12px; padding:18px; border-top:1px solid var(--navy-700); }
+  .hide { display:none; }
+  .small { font-size:12px; }
+  .tag-red{color:#f87171;} .tag-yellow{color:#facc15;}
+  @media print {
+    header, nav, footer, .no-print { display:none !important; }
+    body { background:#fff; color:#000; }
+    .card { border:none; box-shadow:none; background:#fff; }
+    .row-weekend { background:#ffff00 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .row-holiday { background:#ffc000 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .row-super { background:#000 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    th,td { color:#000; border-color:#000; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">
+      <span class="lt">I MSB</span>
+      <div>
+        <div style="font-weight:700;">OOD / AOOD Duty Roster Generator</div>
+        <small>I Marine Expeditionary Force Support Battalion</small>
+      </div>
+    </div>
+    <div class="row no-print">
+      <button class="btn btn-ghost" onclick="saveDataFile()">💾 Save Data</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('loadData').click()">📂 Load Data</button>
+      <input type="file" id="loadData" accept=".json" class="hide" onchange="loadDataFile(this)" />
+    </div>
+  </div>
+  <nav class="no-print" id="nav"></nav>
+</header>
+
+<main>
+  <section id="tab-generate"></section>
+  <section id="tab-personnel" class="hide"></section>
+  <section id="tab-history" class="hide"></section>
+  <section id="tab-about" class="hide"></section>
+</main>
+
+<footer>
+  POC: 1stLt Joseph, James L. — HQ Co XO / S-6, I MSB · Runs entirely in your browser · BnO 1601.1
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================================
+   I MSB / I MEF CE Duty Roster Generator — single-file browser app.
+   No server, no install. All logic + seed data is embedded below. User data
+   persists in the browser (localStorage) and can be saved to / loaded from a
+   .json file (like a "profile") so it travels between computers.
+   ============================================================================ */
+
+/* ---- EMBEDDED DATA --------------------------------------------------------- */
+const HOLIDAYS = [
+  {name:"New Year's Day",liberty_starts:"2025-12-31T16:30:00",liberty_ends:"2026-01-05T07:30:00",label:"NEW YEARS 96"},
+  {name:"Martin Luther King Jr. Day",liberty_starts:"2026-01-15T16:30:00",liberty_ends:"2026-01-20T07:30:00",label:"MLK DAY 96"},
+  {name:"Washington's Birthday",liberty_starts:"2026-02-12T16:30:00",liberty_ends:"2026-02-17T07:30:00",label:"PRESIDENTS DAY 96"},
+  {name:"Memorial Day",liberty_starts:"2026-05-21T16:30:00",liberty_ends:"2026-05-26T07:30:00",label:"MEMORIAL DAY 96"},
+  {name:"Juneteenth",liberty_starts:"2026-06-18T16:30:00",liberty_ends:"2026-06-23T07:30:00",label:"JUNETEENTH 96"},
+  {name:"Independence Day",liberty_starts:"2026-07-02T16:30:00",liberty_ends:"2026-07-07T07:30:00",label:"INDEPENDENCE DAY 96"},
+  {name:"Labor Day",liberty_starts:"2026-09-03T16:30:00",liberty_ends:"2026-09-08T07:30:00",label:"LABOR DAY 96"},
+  {name:"Columbus Day",liberty_starts:"2026-10-08T16:30:00",liberty_ends:"2026-10-13T07:30:00",label:"COLUMBUS DAY 96"},
+  {name:"Veterans Day",liberty_starts:"2026-11-09T16:30:00",liberty_ends:"2026-11-13T07:30:00",label:"VETERANS DAY 72"},
+  {name:"Thanksgiving Day",liberty_starts:"2026-11-25T16:30:00",liberty_ends:"2026-11-30T07:30:00",label:"THANKSGIVING 96"},
+  {name:"Christmas Day",liberty_starts:"2026-12-23T16:30:00",liberty_ends:"2026-12-28T07:30:00",label:"CHRISTMAS 96"},
+  {name:"New Year's Day 2027",liberty_starts:"2026-12-30T16:30:00",liberty_ends:"2027-01-04T07:30:00",label:"NEW YEARS 96"}
+];
+
+const MSB_SECTIONS = ["HQ","CSSC"];
+const MEF_SECTIONS = ["G1","G2","G3","G4","G6","G7","G8","CMST"];
+
+const DEFAULT_PERSONNEL = [
+  {id:"hq-ood-1",name:"Capt Reyes, Marcus A.",rank:"Capt",section:"HQ",phone:"760-555-0101",role:"OOD",pool:"MSB",status:""},
+  {id:"hq-ood-2",name:"1stLt Holt, Dana R.",rank:"1stLt",section:"HQ",phone:"760-555-0102",role:"OOD",pool:"MSB",status:""},
+  {id:"hq-ood-3",name:"GySgt Park, Steven L.",rank:"GySgt",section:"HQ",phone:"760-555-0103",role:"OOD",pool:"MSB",status:""},
+  {id:"hq-ood-4",name:"SSgt Nguyen, Tran V.",rank:"SSgt",section:"HQ",phone:"760-555-0104",role:"OOD",pool:"MSB",status:""},
+  {id:"hq-aood-1",name:"Sgt Carter, Bryan T.",rank:"Sgt",section:"HQ",phone:"760-555-0105",role:"AOOD",pool:"MSB",status:""},
+  {id:"hq-aood-2",name:"Cpl Davis, Erica M.",rank:"Cpl",section:"HQ",phone:"760-555-0106",role:"AOOD",pool:"MSB",status:""},
+  {id:"hq-aood-3",name:"Sgt Flores, Luis G.",rank:"Sgt",section:"HQ",phone:"760-555-0107",role:"AOOD",pool:"MSB",status:""},
+  {id:"cssc-ood-1",name:"CWO3 Bell, Howard K.",rank:"CWO3",section:"CSSC",phone:"760-555-0201",role:"OOD",pool:"MSB",status:""},
+  {id:"cssc-ood-2",name:"1stLt Mason, Olivia P.",rank:"1stLt",section:"CSSC",phone:"760-555-0202",role:"OOD",pool:"MSB",status:""},
+  {id:"cssc-ood-3",name:"GySgt Ruiz, Hector J.",rank:"GySgt",section:"CSSC",phone:"760-555-0203",role:"OOD",pool:"MSB",status:""},
+  {id:"cssc-ood-4",name:"SSgt Walker, Aaron D.",rank:"SSgt",section:"CSSC",phone:"760-555-0204",role:"OOD",pool:"MSB",status:""},
+  {id:"cssc-aood-1",name:"Sgt Brooks, Tina S.",rank:"Sgt",section:"CSSC",phone:"760-555-0205",role:"AOOD",pool:"MSB",status:""},
+  {id:"cssc-aood-2",name:"Cpl Hughes, Marcus E.",rank:"Cpl",section:"CSSC",phone:"760-555-0206",role:"AOOD",pool:"MSB",status:""},
+  {id:"cssc-aood-3",name:"Sgt Patel, Niraj R.",rank:"Sgt",section:"CSSC",phone:"760-555-0207",role:"AOOD",pool:"MSB",status:""},
+  {id:"g1-ood-1",name:"Capt Adams, Rachel L.",rank:"Capt",section:"G1",phone:"760-555-1101",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g1-ood-2",name:"1stLt Boone, Travis K.",rank:"1stLt",section:"G1",phone:"760-555-1102",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g1-aood-1",name:"Sgt Ortiz, Maria C.",rank:"Sgt",section:"G1",phone:"760-555-1103",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g1-aood-2",name:"Cpl Reed, Jacob T.",rank:"Cpl",section:"G1",phone:"760-555-1104",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g2-ood-1",name:"Capt Lin, Wesley H.",rank:"Capt",section:"G2",phone:"760-555-1201",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g2-ood-2",name:"CWO2 Frost, Allen D.",rank:"CWO2",section:"G2",phone:"760-555-1202",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g2-aood-1",name:"Sgt Cole, Brianna F.",rank:"Sgt",section:"G2",phone:"760-555-1203",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g2-aood-2",name:"Cpl Hayes, Devin M.",rank:"Cpl",section:"G2",phone:"760-555-1204",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g3-ood-1",name:"Capt Ward, Jonathan P.",rank:"Capt",section:"G3",phone:"760-555-1301",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g3-ood-2",name:"1stLt Diaz, Sofia R.",rank:"1stLt",section:"G3",phone:"760-555-1302",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g3-aood-1",name:"Sgt Morgan, Tyler J.",rank:"Sgt",section:"G3",phone:"760-555-1303",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g3-aood-2",name:"Cpl Bennett, Kayla N.",rank:"Cpl",section:"G3",phone:"760-555-1304",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g4-ood-1",name:"Capt Foster, Liam B.",rank:"Capt",section:"G4",phone:"760-555-1401",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g4-ood-2",name:"GySgt Snyder, Paul R.",rank:"GySgt",section:"G4",phone:"760-555-1402",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g4-aood-1",name:"Sgt Russell, Dana K.",rank:"Sgt",section:"G4",phone:"760-555-1403",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g4-aood-2",name:"Cpl Perry, Aaron L.",rank:"Cpl",section:"G4",phone:"760-555-1404",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g6-ood-1",name:"1stLt Coleman, Grace H.",rank:"1stLt",section:"G6",phone:"760-555-1601",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g6-ood-2",name:"SSgt Barnes, Eric T.",rank:"SSgt",section:"G6",phone:"760-555-1602",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g6-aood-1",name:"Sgt Gibson, Marcus D.",rank:"Sgt",section:"G6",phone:"760-555-1603",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g6-aood-2",name:"Cpl Fox, Lauren A.",rank:"Cpl",section:"G6",phone:"760-555-1604",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g7-ood-1",name:"Capt Sullivan, Brent C.",rank:"Capt",section:"G7",phone:"760-555-1701",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g7-ood-2",name:"1stLt Wells, Hannah J.",rank:"1stLt",section:"G7",phone:"760-555-1702",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g7-aood-1",name:"Sgt Bishop, Carlos M.",rank:"Sgt",section:"G7",phone:"760-555-1703",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g7-aood-2",name:"Cpl Hart, Megan E.",rank:"Cpl",section:"G7",phone:"760-555-1704",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g8-ood-1",name:"CWO2 Lowe, Derek S.",rank:"CWO2",section:"G8",phone:"760-555-1801",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g8-ood-2",name:"1stLt Page, Natalie R.",rank:"1stLt",section:"G8",phone:"760-555-1802",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"g8-aood-1",name:"Sgt Dunn, Victor H.",rank:"Sgt",section:"G8",phone:"760-555-1803",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"g8-aood-2",name:"Cpl Lane, Sierra K.",rank:"Cpl",section:"G8",phone:"760-555-1804",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"cmst-ood-1",name:"1stLt Vaughn, Cody A.",rank:"1stLt",section:"CMST",phone:"760-555-1901",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"cmst-ood-2",name:"SSgt Ellis, Rhonda T.",rank:"SSgt",section:"CMST",phone:"760-555-1902",role:"OOD",pool:"MEF_CE",status:""},
+  {id:"cmst-aood-1",name:"Sgt Mack, Trevor L.",rank:"Sgt",section:"CMST",phone:"760-555-1903",role:"AOOD",pool:"MEF_CE",status:""},
+  {id:"cmst-aood-2",name:"Cpl Soto, Brianna P.",rank:"Cpl",section:"CMST",phone:"760-555-1904",role:"AOOD",pool:"MEF_CE",status:""}
+];
+
+const SEED_HISTORY = [
+  {month:1,year:2026,label:"January 2026",days:[
+    {date:14,day:"Wed",oodSection:"G4",aoodSection:"CSSC",holiday:""},{date:15,day:"Thu",oodSection:"G4",aoodSection:"HQ",holiday:""},
+    {date:16,day:"Fri",oodSection:"G3",aoodSection:"CSSC",holiday:"MLK DAY 96"},{date:17,day:"Sat",oodSection:"G2",aoodSection:"HQ",holiday:""},
+    {date:18,day:"Sun",oodSection:"CSSC",aoodSection:"CSSC",holiday:""},{date:19,day:"Mon",oodSection:"HQ",aoodSection:"HQ",holiday:"MLK DAY 96"},
+    {date:20,day:"Tue",oodSection:"HQ",aoodSection:"CSSC",holiday:""},{date:21,day:"Wed",oodSection:"G6",aoodSection:"HQ",holiday:""},
+    {date:22,day:"Thu",oodSection:"HQ",aoodSection:"CSSC",holiday:""},{date:23,day:"Fri",oodSection:"G1",aoodSection:"HQ",holiday:""},
+    {date:24,day:"Sat",oodSection:"G1",aoodSection:"CSSC",holiday:""},{date:25,day:"Sun",oodSection:"CMST",aoodSection:"HQ",holiday:""},
+    {date:26,day:"Mon",oodSection:"HQ",aoodSection:"HQ",holiday:""},{date:27,day:"Tue",oodSection:"CSSC",aoodSection:"CSSC",holiday:""},
+    {date:28,day:"Wed",oodSection:"G2",aoodSection:"CSSC",holiday:""},{date:29,day:"Thu",oodSection:"G6",aoodSection:"HQ",holiday:""},
+    {date:30,day:"Fri",oodSection:"G8",aoodSection:"CSSC",holiday:""},{date:31,day:"Sat",oodSection:"G3",aoodSection:"CSSC",holiday:""}]},
+  {month:2,year:2026,label:"February 2026",days:[
+    {date:13,day:"Fri",oodSection:"HQ",aoodSection:"CSSC",holiday:"PRESIDENTS DAY 96"},{date:14,day:"Sat",oodSection:"HQ",aoodSection:"HQ",holiday:"PRESIDENTS DAY 96"},
+    {date:15,day:"Sun",oodSection:"G3",aoodSection:"CSSC",holiday:"PRESIDENTS DAY 96"},{date:16,day:"Mon",oodSection:"HQ",aoodSection:"CSSC",holiday:"PRESIDENTS DAY 96"},
+    {date:17,day:"Tue",oodSection:"HQ",aoodSection:"HQ",holiday:""},{date:18,day:"Wed",oodSection:"G4",aoodSection:"CSSC",holiday:""},
+    {date:19,day:"Thu",oodSection:"G6",aoodSection:"HQ",holiday:""},{date:20,day:"Fri",oodSection:"HQ",aoodSection:"CSSC",holiday:""},
+    {date:21,day:"Sat",oodSection:"G1",aoodSection:"CSSC",holiday:""},{date:22,day:"Sun",oodSection:"G4",aoodSection:"CSSC",holiday:""},
+    {date:23,day:"Mon",oodSection:"CMST",aoodSection:"HQ",holiday:""},{date:24,day:"Tue",oodSection:"G1",aoodSection:"HQ",holiday:""},
+    {date:25,day:"Wed",oodSection:"G2",aoodSection:"CSSC",holiday:""},{date:26,day:"Thu",oodSection:"G6",aoodSection:"HQ",holiday:""},
+    {date:27,day:"Fri",oodSection:"G8",aoodSection:"CSSC",holiday:""},{date:28,day:"Sat",oodSection:"G3",aoodSection:"CSSC",holiday:""}]},
+  {month:3,year:2026,label:"March 2026",days:[
+    {date:17,day:"Tue",oodSection:"G1",aoodSection:"HQ",holiday:""},{date:18,day:"Wed",oodSection:"G3",aoodSection:"CSSC",holiday:""},
+    {date:19,day:"Thu",oodSection:"G2",aoodSection:"HQ",holiday:""},{date:20,day:"Fri",oodSection:"G4",aoodSection:"CSSC",holiday:""},
+    {date:21,day:"Sat",oodSection:"G2",aoodSection:"CSSC",holiday:""},{date:22,day:"Sun",oodSection:"G4",aoodSection:"CSSC",holiday:""},
+    {date:23,day:"Mon",oodSection:"G6",aoodSection:"HQ",holiday:""},{date:24,day:"Tue",oodSection:"G8",aoodSection:"HQ",holiday:""},
+    {date:25,day:"Wed",oodSection:"CMST",aoodSection:"CSSC",holiday:""},{date:26,day:"Thu",oodSection:"G1",aoodSection:"HQ",holiday:""},
+    {date:27,day:"Fri",oodSection:"G6",aoodSection:"CSSC",holiday:""},{date:28,day:"Sat",oodSection:"G3",aoodSection:"CSSC",holiday:""},
+    {date:29,day:"Sun",oodSection:"G8",aoodSection:"CSSC",holiday:""},{date:30,day:"Mon",oodSection:"HQ",aoodSection:"CSSC",holiday:""},
+    {date:31,day:"Tue",oodSection:"G4",aoodSection:"CSSC",holiday:""}]},
+  {month:5,year:2025,label:"May 2025",days:[
+    {date:16,day:"Fri",oodSection:"G3",aoodSection:"CSSC",holiday:""},{date:17,day:"Sat",oodSection:"G2",aoodSection:"HQ",holiday:""},
+    {date:18,day:"Sun",oodSection:"G1",aoodSection:"CSSC",holiday:""},{date:19,day:"Mon",oodSection:"G3",aoodSection:"HQ",holiday:""},
+    {date:20,day:"Tue",oodSection:"G4",aoodSection:"CSSC",holiday:""},{date:21,day:"Wed",oodSection:"G6",aoodSection:"HQ",holiday:""},
+    {date:22,day:"Thu",oodSection:"G7",aoodSection:"CSSC",holiday:""},{date:23,day:"Fri",oodSection:"CMST",aoodSection:"HQ",holiday:"MEMORIAL DAY 96"},
+    {date:24,day:"Sat",oodSection:"G1",aoodSection:"CSSC",holiday:"MEMORIAL DAY 96"},{date:25,day:"Sun",oodSection:"G7",aoodSection:"HQ",holiday:"MEMORIAL DAY 96"},
+    {date:26,day:"Mon",oodSection:"G8",aoodSection:"CSSC",holiday:"MEMORIAL DAY 96"},{date:27,day:"Tue",oodSection:"G5/SSEC",aoodSection:"HQ",holiday:""},
+    {date:28,day:"Wed",oodSection:"G2",aoodSection:"CSSC",holiday:""},{date:29,day:"Thu",oodSection:"G6",aoodSection:"HQ",holiday:""},
+    {date:30,day:"Fri",oodSection:"G4",aoodSection:"CSSC",holiday:""},{date:31,day:"Sat",oodSection:"G4",aoodSection:"CSSC",holiday:""}]},
+  {month:5,year:2026,label:"May 2026",days:[
+    {date:16,day:"Sat",oodSection:"G7",aoodSection:"CSSC",holiday:""},{date:17,day:"Sun",oodSection:"G1",aoodSection:"HQ",holiday:""},
+    {date:18,day:"Mon",oodSection:"G8",aoodSection:"CSSC",holiday:""},{date:19,day:"Tue",oodSection:"G2",aoodSection:"HQ",holiday:""},
+    {date:20,day:"Wed",oodSection:"G4",aoodSection:"CSSC",holiday:""},{date:21,day:"Thu",oodSection:"CMST",aoodSection:"CSSC",holiday:""},
+    {date:22,day:"Fri",oodSection:"G2",aoodSection:"CSSC",holiday:"MEMORIAL DAY 96"},{date:23,day:"Sat",oodSection:"G6",aoodSection:"HQ",holiday:""},
+    {date:24,day:"Sun",oodSection:"G3",aoodSection:"HQ",holiday:""},{date:25,day:"Mon",oodSection:"CMST",aoodSection:"CSSC",holiday:"MEMORIAL DAY 96"},
+    {date:26,day:"Tue",oodSection:"G4",aoodSection:"HQ",holiday:""},{date:27,day:"Wed",oodSection:"G6",aoodSection:"CSSC",holiday:""},
+    {date:28,day:"Thu",oodSection:"G3",aoodSection:"CSSC",holiday:""},{date:29,day:"Fri",oodSection:"G7",aoodSection:"CSSC",holiday:""},
+    {date:30,day:"Sat",oodSection:"G8",aoodSection:"CSSC",holiday:""}]}
+];
+
+const OOD_RANKS = ['Capt','1stLt','2ndLt','CWO2','CWO3','CWO4','CWO5','WO','GySgt','SSgt'];
+const AOOD_RANKS = ['Sgt','Cpl'];
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+/* ---- CALENDAR -------------------------------------------------------------- */
+function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
+function parseLocal(str){
+  const [d,t='00:00:00']=str.split('T'); const [Y,M,D]=d.split('-').map(Number);
+  const [h,mi,s]=t.split(':').map(Number); return new Date(Y,M-1,D,h||0,mi||0,s||0);
+}
+function holidayLabelFor(y,m,date){
+  const s=new Date(y,m-1,date,0,0,0), e=new Date(y,m-1,date,23,59,59);
+  for(const h of HOLIDAYS){ const hs=parseLocal(h.liberty_starts), he=parseLocal(h.liberty_ends);
+    if(s<=he && e>=hs) return h.label; }
+  return '';
+}
+function buildCalendar(y,m,mefCeStart){
+  const n=daysInMonth(y,m), days=[];
+  for(let date=1;date<=n;date++){
+    const dow=new Date(y,m-1,date).getDay(), label=holidayLabelFor(y,m,date);
+    days.push({date,dow,day:DAY_NAMES[dow],isWeekend:dow===0||dow===6,holiday:label,isHoliday:!!label,
+      pool:date<mefCeStart?'MSB':'MEF_CE'});
+  }
+  return {year:y,month:m,monthName:MONTH_NAMES[m-1],label:`${MONTH_NAMES[m-1]} ${y}`,mefCeStart,daysInMonth:n,days};
+}
+
+/* ---- FAIRNESS -------------------------------------------------------------- */
+function monthKey(y,m){ return `${y}-${String(m).padStart(2,'0')}`; }
+function blank(){ return {total:0,weekend:0,holiday:0}; }
+function dayIsWeekend(d){ return typeof d.isWeekend==='boolean'?d.isWeekend:(d.day==='Sat'||d.day==='Sun'); }
+function dayIsHoliday(d){ return !!(d.holiday && String(d.holiday).trim()); }
+
+function summarize(rosters){
+  const bySection={}, byMonth={}, ms=new Set();
+  const ensure=s=>{ if(!bySection[s]) bySection[s]={...blank(),byMonth:{}}; return bySection[s]; };
+  for(const r of rosters){ const k=monthKey(r.year,r.month); ms.add(k); byMonth[k]=byMonth[k]||{};
+    for(const d of r.days||[]){ const sec=d.oodSection||(d.ood&&d.ood.section); if(!sec) continue;
+      const w=dayIsWeekend(d), h=dayIsHoliday(d), s=ensure(sec);
+      s.total++; if(w)s.weekend++; if(h)s.holiday++;
+      s.byMonth[k]=s.byMonth[k]||blank(); s.byMonth[k].total++; if(w)s.byMonth[k].weekend++; if(h)s.byMonth[k].holiday++;
+      byMonth[k][sec]=byMonth[k][sec]||blank(); byMonth[k][sec].total++; if(w)byMonth[k][sec].weekend++; if(h)byMonth[k][sec].holiday++;
+    }}
+  return {bySection,byMonth,months:[...ms].sort()};
+}
+function priorMonthKey(b,y,m){ const t=monthKey(y,m); const e=b.months.filter(x=>x<t); return e.length?e[e.length-1]:null; }
+function burdenForMonth(b,k,s){ return (b.byMonth[k]&&b.byMonth[k][s])||blank(); }
+function recentBurden(b,s,beforeKey,n=4){
+  const keys=b.months.filter(m=>!beforeKey||m<=beforeKey).slice(-n); let w=0,h=0,t=0;
+  keys.forEach((k,i)=>{ const wt=i+1, st=(b.byMonth[k]&&b.byMonth[k][s])||blank(); w+=st.weekend*wt; h+=st.holiday*wt; t+=st.total*wt; });
+  return {weekend:w,holiday:h,total:t};
+}
+function scoreSection(section,day,b,target,state){
+  const pk=priorMonthKey(b,target.year,target.month), prev=pk?burdenForMonth(b,pk,section):blank(), rec=recentBurden(b,section,pk);
+  const special=day.isWeekend||day.isHoliday; let sc=0;
+  sc+=(state.assignedTotal[section]||0)*10;
+  if(special){
+    if(day.isHoliday&&prev.holiday>0) sc+=100;
+    if(day.isWeekend&&prev.weekend>0) sc+=60;
+    if(prev.weekend+prev.holiday>0) sc+=25;
+    sc+=(state.assignedWeekend[section]||0)*40;
+    sc+=(state.assignedHoliday[section]||0)*80;
+    sc+=rec.holiday*6+rec.weekend*3;
+  } else { sc+=rec.total*0.5; }
+  return sc;
+}
+function rankSections(secs,day,b,target,state){
+  return [...secs].map(s=>({section:s,score:scoreSection(s,day,b,target,state)}))
+    .sort((a,b2)=>a.score-b2.score||a.section.localeCompare(b2.section));
+}
+function gradeRoster(g,b){
+  const pk=priorMonthKey(b,g.year,g.month), flags=[]; let pen=0; const thisMonth={};
+  for(const d of g.days){ const sec=d.ood&&d.ood.section; if(!sec) continue;
+    thisMonth[sec]=thisMonth[sec]||blank(); thisMonth[sec].total++;
+    if(d.isWeekend)thisMonth[sec].weekend++; if(d.isHoliday)thisMonth[sec].holiday++; }
+  for(const [sec,st] of Object.entries(thisMonth)){ const prev=pk?burdenForMonth(b,pk,sec):blank();
+    if(st.holiday>0&&prev.holiday>0){ pen+=20; flags.push({level:'red',msg:`${sec} carried holiday duty two months in a row.`}); }
+    else if(st.weekend>0&&prev.weekend>0){ pen+=10; flags.push({level:'yellow',msg:`${sec} carried weekend duty two months in a row.`}); } }
+  const mef=Object.entries(thisMonth).filter(([s])=>s!=='HQ'&&s!=='CSSC').map(([,s])=>s.total);
+  if(mef.length){ const spread=Math.max(...mef)-Math.min(...mef);
+    if(spread>2){ pen+=(spread-2)*5; flags.push({level:'yellow',msg:`Uneven MEF CE load (spread of ${spread} duties).`}); } }
+  const score=Math.max(0,100-pen);
+  const grade=score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F';
+  return {score,grade,flags,thisMonth};
+}
+function owedLighterMonths(b,target){
+  const pk=priorMonthKey(b,target.year,target.month), out=[];
+  for(const sec of Object.keys(b.bySection)){ const prev=pk?burdenForMonth(b,pk,sec):blank();
+    if(prev.holiday>0) out.push({section:sec,reason:'carried holiday last month',level:'red'});
+    else if(prev.weekend>0) out.push({section:sec,reason:'carried weekend last month',level:'yellow'}); }
+  return out;
+}
+
+/* ---- GENERATOR ------------------------------------------------------------- */
+function statusExempts(status,role){
+  if(!status) return false; const s=String(status).toLowerCase();
+  if(/legal|pending|investigation|exempt|weapon.*incapable|incapable.*weapon/.test(s)) return true;
+  if(/no overnight/.test(s)) return true;
+  if(role==='OOD'){ if(/no weapon/.test(s)) return true; if(/no classified|no.?access|classified/.test(s)) return true; }
+  if(/light duty|limited duty/.test(s)){ if(!/no weapon|no overnight|no driving/.test(s)) return true; }
+  return false;
+}
+function isAvailable(p,date){ const u=p.unavailable||[]; return !u.includes(date)&&!u.includes(String(date)); }
+function rankEligible(p,role){ return role==='OOD'?OOD_RANKS.includes(p.rank):AOOD_RANKS.includes(p.rank); }
+function eligibleFor(p,role,date){
+  if(p.exempt) return false; if(statusExempts(p.status,role)) return false; if(!isAvailable(p,date)) return false;
+  if(p.role && p.role!==role) return false; if(!p.role && !rankEligible(p,role)) return false; return true;
+}
+function companyOf(s){ return (s==='HQ'||s==='CSSC')?s:'MEF_CE'; }
+function toAssignment(p){ return {id:p.id,name:p.name,section:p.section,phone:p.phone||'',rank:p.rank}; }
+
+function pickIndividual(cands,day,ctx){
+  const elig=cands.filter(p=>eligibleFor(p,ctx.role,day.date));
+  const free=elig.filter(p=>{ const ds=ctx.personDates[p.id]; return !ds||(!ds.has(day.date-1)&&!ds.has(day.date+1)); });
+  const pool=free.length?free:elig; if(!pool.length) return null;
+  const special=day.isWeekend||day.isHoliday;
+  return [...pool].sort((a,b)=>{
+    if(special){ const sa=ctx.monthSpecial[a.id]||0, sb=ctx.monthSpecial[b.id]||0; if(sa!==sb) return sa-sb; }
+    const la=ctx.monthLoad[a.id]||0, lb=ctx.monthLoad[b.id]||0; if(la!==lb) return la-lb;
+    return a.id.localeCompare(b.id);
+  })[0];
+}
+function generateRoster(cal,personnel,burden,cfg){
+  cfg=cfg||{}; const mefCeStart=cfg.mefCeStart||cal.mefCeStart||16, fillMsb=cfg.fillMsb!==false, aoodPool=cfg.aoodPool||'MSB';
+  const mefSections=[...new Set(personnel.filter(p=>p.pool==='MEF_CE'&&(p.role==='OOD'||OOD_RANKS.includes(p.rank))).map(p=>p.section))].sort();
+  const oodBySection={}, aoodAll=personnel.filter(p=>p.role==='AOOD'||(!p.role&&AOOD_RANKS.includes(p.rank)));
+  for(const p of personnel){ if(p.role==='OOD'||(!p.role&&OOD_RANKS.includes(p.rank))){ (oodBySection[p.section]=oodBySection[p.section]||[]).push(p); } }
+  const state={assignedTotal:{},assignedWeekend:{},assignedHoliday:{}};
+  const personDates={}, monthLoad={}, monthSpecial={};
+  const mark=(id,d)=>{ (personDates[id]=personDates[id]||new Set()).add(d); };
+  const target={year:cal.year,month:cal.month}, unassigned=[], dayResults={};
+  for(const d of cal.days){ dayResults[d.date]={date:d.date,day:d.day,dow:d.dow,isWeekend:d.isWeekend,isHoliday:d.isHoliday,
+    holiday:d.holiday,pool:d.date<mefCeStart?'MSB':'MEF_CE',ood:null,aood:null}; }
+  const ordered=[...cal.days].sort((a,b)=>{ const r=x=>x.isHoliday?0:x.isWeekend?1:2; return r(a)-r(b)||a.date-b.date; });
+  const recordOod=(res,section,person,day)=>{
+    res.ood=person?toAssignment(person):{name:'',section,phone:''};
+    state.assignedTotal[section]=(state.assignedTotal[section]||0)+1;
+    if(day.isWeekend)state.assignedWeekend[section]=(state.assignedWeekend[section]||0)+1;
+    if(day.isHoliday)state.assignedHoliday[section]=(state.assignedHoliday[section]||0)+1;
+    if(person){ mark(person.id,day.date); monthLoad[person.id]=(monthLoad[person.id]||0)+1;
+      if(day.isWeekend||day.isHoliday) monthSpecial[person.id]=(monthSpecial[person.id]||0)+1; }
+  };
+  for(const day of ordered){ const res=dayResults[day.date], isMsb=day.date<mefCeStart;
+    if(isMsb&&!fillMsb) continue;
+    const secPool=isMsb?MSB_SECTIONS:mefSections;
+    if(!secPool.length){ unassigned.push({date:day.date,reason:'no sections in pool'}); continue; }
+    const ranked=rankSections(secPool,day,burden,target,state);
+    let chosenSection=null, chosenPerson=null;
+    for(const {section} of ranked){ const person=pickIndividual(oodBySection[section]||[],day,{role:'OOD',personDates,monthLoad,monthSpecial});
+      if(person){ chosenSection=section; chosenPerson=person; break; } if(!chosenSection) chosenSection=section; }
+    if(!chosenPerson){ recordOod(res,chosenSection||secPool[0],null,day); unassigned.push({date:day.date,role:'OOD',reason:'no eligible individual available'}); }
+    else recordOod(res,chosenSection,chosenPerson,day);
+    const oodCo=res.ood&&res.ood.section?companyOf(res.ood.section):null;
+    let aoodC=aoodAll; if(aoodPool==='MSB') aoodC=aoodC.filter(p=>p.pool==='MSB');
+    const pref=aoodC.filter(p=>companyOf(p.section)!==oodCo);
+    let a=pickIndividual(pref,day,{role:'AOOD',personDates,monthLoad,monthSpecial});
+    if(!a) a=pickIndividual(aoodC,day,{role:'AOOD',personDates,monthLoad,monthSpecial});
+    if(a){ res.aood=toAssignment(a); mark(a.id,day.date); monthLoad[a.id]=(monthLoad[a.id]||0)+1;
+      if(day.isWeekend||day.isHoliday) monthSpecial[a.id]=(monthSpecial[a.id]||0)+1; }
+    else { res.aood={name:'',section:'',phone:''}; unassigned.push({date:day.date,role:'AOOD',reason:'no eligible AOOD available'}); }
+  }
+  const pickSuper=fn=>{ const c=personnel.filter(fn); const l=[...c].sort((a,b)=>(monthLoad[a.id]||0)-(monthLoad[b.id]||0))[0];
+    return l?toAssignment(l):{name:'',section:'',phone:''}; };
+  const supernumerary=[ {element:'HQ',...pickSuper(p=>p.section==='HQ')},
+    {element:'CSSC',...pickSuper(p=>p.section==='CSSC')}, {element:'I MEF CE',...pickSuper(p=>p.pool==='MEF_CE')} ];
+  return {year:cal.year,month:cal.month,monthName:cal.monthName,label:cal.label,mefCeStart,
+    days:cal.days.map(d=>dayResults[d.date]),supernumerary,unassigned,config:{mefCeStart,fillMsb,aoodPool}};
+}
+
+/* ---- EXCEL EXPORT (ExcelJS) ------------------------------------------------ */
+const HEADERS=['DATE','DAY','OOD','SECTION','OOD#','AOOD','SECTION','AOOD#','Holiday'];
+const COLW=[6,12,32,10,16,32,10,16,18];
+async function exportXlsx(roster){
+  if(typeof ExcelJS==='undefined'){ toast('ExcelJS not loaded — exporting CSV instead.'); return exportCsv(roster); }
+  const wb=new ExcelJS.Workbook(); const ws=wb.addWorksheet(`${roster.monthName} ${roster.year}`,
+    {pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
+  ws.columns=COLW.map(w=>({width:w}));
+  const border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+  const style=(row,font,fill)=>row.eachCell({includeEmpty:true},c=>{ c.font=font||{name:'Calibri',size:8,bold:true};
+    c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; c.border=border; if(fill)c.fill=fill; });
+  ws.mergeCells(1,1,1,HEADERS.length);
+  const t=ws.getCell(1,1); t.value=`MEF & MSB Duty Roster for ${roster.monthName} ${roster.year}. P.O.C for NO SHOWS is the HQ Co 1stLt Joseph, James`;
+  t.font={name:'Calibri',size:11,bold:true}; t.alignment={horizontal:'center',vertical:'middle',wrapText:true}; t.border=border; ws.getRow(1).height=30;
+  const hr=ws.getRow(2); HEADERS.forEach((h,i)=>hr.getCell(i+1).value=h); style(hr,{name:'Calibri',size:10,bold:true});
+  const yel={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFF00'}}, amb={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFC000'}},
+        blk={type:'pattern',pattern:'solid',fgColor:{argb:'FF000000'}};
+  let r=3;
+  for(const d of roster.days){ const row=ws.getRow(r);
+    row.getCell(1).value=d.date; row.getCell(2).value=d.day;
+    row.getCell(3).value=(d.ood&&d.ood.name)||''; row.getCell(4).value=(d.ood&&d.ood.section)||''; row.getCell(5).value=(d.ood&&d.ood.phone)||'';
+    row.getCell(6).value=(d.aood&&d.aood.name)||''; row.getCell(7).value=(d.aood&&d.aood.section)||''; row.getCell(8).value=(d.aood&&d.aood.phone)||'';
+    row.getCell(9).value=d.holiday||'';
+    style(row,null,d.isHoliday?amb:d.isWeekend?yel:null); r++; }
+  const sf={name:'Calibri',size:8,bold:true,color:{argb:'FFFFFFFF'}};
+  for(const s of roster.supernumerary||[]){ const row=ws.getRow(r);
+    row.getCell(1).value=s.element; row.getCell(2).value='SUPERNUMERARY'; row.getCell(3).value=s.name||'';
+    row.getCell(4).value=s.section||''; row.getCell(5).value=s.phone||''; style(row,sf,blk); r++; }
+  const tr=ws.getRow(r); tr.getCell(1).value='TOTAL'; tr.getCell(2).value=`${roster.days.length} days`; style(tr);
+  const buf=await wb.xlsx.writeBuffer();
+  download(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),
+    `${roster.monthName}_${roster.year}_OOD_AOOD_Duty_Roster.xlsx`);
+  toast('Excel file downloaded.');
+}
+function exportCsv(roster){
+  let rows=[HEADERS.join(',')];
+  for(const d of roster.days){ rows.push([d.date,d.day,q(d.ood&&d.ood.name),d.ood&&d.ood.section,q(d.ood&&d.ood.phone),
+    q(d.aood&&d.aood.name),d.aood&&d.aood.section,q(d.aood&&d.aood.phone),q(d.holiday)].join(',')); }
+  for(const s of roster.supernumerary||[]) rows.push([s.element,'SUPERNUMERARY',q(s.name),s.section,q(s.phone),'','','',''].join(','));
+  download(new Blob([rows.join('\n')],{type:'text/csv'}),`${roster.monthName}_${roster.year}_OOD_AOOD_Duty_Roster.csv`);
+  function q(v){ v=v==null?'':String(v); return /[",]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+}
+
+/* ---- PARSE UPLOADED ROSTER (.xlsx) ---------------------------------------- */
+function normalizeSection(s){ if(!s) return ''; const u=String(s).trim().toUpperCase();
+  return ({'COMMSTRAT':'CMST','CMST/COMMSTRAT':'CMST'})[u]||u; }
+function monthYearFromName(name){ const l=name.toLowerCase(); let month=null;
+  MONTH_NAMES.forEach((m,i)=>{ if(l.includes(m.toLowerCase())) month=i+1; });
+  const y=l.match(/(20\d{2})/); return {month,year:y?Number(y[1]):null}; }
+function cellText(cell){ if(!cell) return ''; const v=cell.value; if(v==null) return '';
+  if(typeof v==='object'){ if(v.text) return String(v.text).trim(); if(v.result!=null) return String(v.result).trim();
+    if(v.richText) return v.richText.map(t=>t.text).join('').trim(); return ''; } return String(v).trim(); }
+async function parseRosterFile(file){
+  if(typeof ExcelJS==='undefined') throw new Error('ExcelJS (xlsx reader) is not available on this network.');
+  const buf=await file.arrayBuffer(); const wb=new ExcelJS.Workbook(); await wb.xlsx.load(buf);
+  const ws=wb.worksheets[0]; let headerRow=2;
+  ws.eachRow((row,n)=>{ const vals=row.values.map(c=>String(c||'').toUpperCase());
+    if(vals.some(v=>v.includes('DATE'))&&vals.some(v=>v.includes('OOD'))) headerRow=headerRow===2?n:headerRow; });
+  const col={}; ws.getRow(headerRow).eachCell((cell,c)=>{ const tt=cellText(cell).toUpperCase().replace(/\s+/g,'');
+    if(tt==='DATE')col.date=c; else if(tt==='DAY')col.day=c; else if(tt.includes('HOLIDAY'))col.holiday=c;
+    else if(tt.includes('AOOD#'))col.aoodPhone=c; else if(tt.includes('OOD#'))col.oodPhone=c;
+    else if(tt==='AOOD'&&col.aood==null)col.aood=c; else if(tt==='OOD'&&col.ood==null)col.ood=c;
+    else if(tt==='SECTION'){ if(col.oodSection==null)col.oodSection=c; else col.aoodSection=c; } });
+  const at=(row,c)=>c?cellText(row.getCell(c)):'';
+  const {month,year}=monthYearFromName(file.name); const days=[];
+  for(let r=headerRow+1;r<=ws.rowCount;r++){ const row=ws.getRow(r); const draw=at(row,col.date||1), date=parseInt(draw,10);
+    const oodSection=normalizeSection(at(row,col.oodSection));
+    if(/SUPERNUMERARY|TOTAL/i.test(draw)||/SUPERNUMERARY/i.test(oodSection)) continue; if(!Number.isFinite(date)) continue;
+    days.push({date,day:at(row,col.day),oodSection,aoodSection:normalizeSection(at(row,col.aoodSection)),holiday:at(row,col.holiday)}); }
+  return {month,year,label:(month&&year)?`${MONTH_NAMES[month-1]} ${year}`:file.name,days};
+}
+
+/* ---- STATE / PERSISTENCE --------------------------------------------------- */
+const LS_KEY='imsb_duty_roster_v1';
+let state={ personnel:null, history:null, target:{year:2026,month:6,mefCeStart:16,fillMsb:true},
+            roster:null, fairness:null, tab:'generate' };
+function loadState(){
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const s=JSON.parse(raw);
+    state.personnel=s.personnel; state.history=s.history; if(s.target) state.target={...state.target,...s.target}; } }catch(e){}
+  if(!state.personnel) state.personnel=JSON.parse(JSON.stringify(DEFAULT_PERSONNEL));
+  if(!state.history) state.history=JSON.parse(JSON.stringify(SEED_HISTORY));
+}
+function persist(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(
+  {personnel:state.personnel,history:state.history,target:state.target})); }catch(e){} }
+function saveDataFile(){
+  const data={app:'imsb-duty-roster',version:1,exported:new Date().toISOString(),
+    personnel:state.personnel,history:state.history,target:state.target};
+  download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),'duty_roster_data.json');
+  toast('Data saved. Keep this file to move your roster between computers.');
+}
+function loadDataFile(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=e=>{ try{ const d=JSON.parse(e.target.result);
+    if(d.personnel) state.personnel=d.personnel; if(d.history) state.history=d.history; if(d.target) state.target={...state.target,...d.target};
+    persist(); render(); toast('Data loaded successfully.'); }catch(err){ toast('Could not read that file.'); } };
+  rd.readAsText(f); input.value=''; }
+
+/* ---- HELPERS --------------------------------------------------------------- */
+function download(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block';
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none',3500); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function eligible(role){ return state.personnel.filter(p=>p.role?p.role===role:(role==='OOD'?OOD_RANKS:AOOD_RANKS).includes(p.rank)); }
+
+/* ---- RENDER: NAV ----------------------------------------------------------- */
+const TABS=[['generate','Generate'],['personnel','Personnel'],['history','History & Fairness'],['about','Help']];
+function renderNav(){
+  document.getElementById('nav').innerHTML=TABS.map(([id,label])=>
+    `<button class="${state.tab===id?'active':''}" onclick="go('${id}')">${label}</button>`).join('');
+}
+function go(tab){ state.tab=tab; render(); }
+
+/* ---- RENDER: GENERATE ------------------------------------------------------ */
+function renderGenerate(){
+  const t=state.target, cal=buildCalendar(t.year,t.month,t.mefCeStart), burden=summarize(state.history);
+  const owed=owedLighterMonths(burden,t);
+  const holidays=[...new Map(cal.days.filter(d=>d.isHoliday).map(d=>[d.holiday,d])).values()];
+  const weekends=cal.days.filter(d=>d.isWeekend).length;
+  const cnt=(pool,role)=>state.personnel.filter(p=>p.pool===pool&&p.role===role).length;
+
+  let html=`<div class="card">
+    <div class="flex-between"><h2>Generate Monthly Roster</h2></div>
+    <div class="row">
+      <div><label class="lbl">Month</label><select id="selMonth">${MONTH_NAMES.map((m,i)=>
+        `<option value="${i+1}" ${t.month===i+1?'selected':''}>${m}</option>`).join('')}</select></div>
+      <div><label class="lbl">Year</label><select id="selYear">${[2025,2026,2027].map(y=>
+        `<option ${t.year===y?'selected':''}>${y}</option>`).join('')}</select></div>
+      <div><label class="lbl">MEF CE Window Start</label><select id="selStart">${[14,15,16,17].map(d=>
+        `<option value="${d}" ${t.mefCeStart===d?'selected':''}>Day ${d}</option>`).join('')}</select></div>
+      <div><label class="lbl">&nbsp;</label><label class="small" style="display:flex;gap:6px;align-items:center;padding:8px 0;">
+        <input type="checkbox" id="chkMsb" ${t.fillMsb?'checked':''}/> Auto-fill MSB days (1–${t.mefCeStart-1})</label></div>
+      <div><label class="lbl">&nbsp;</label><button class="btn btn-primary" onclick="doGenerate()">Generate Roster</button></div>
+    </div></div>
+
+    <div class="grid grid-4">
+      <div class="card"><h3>Holidays — ${cal.label}</h3>${ holidays.length?
+        '<ul style="margin:0;padding-left:16px;">'+holidays.map(h=>`<li style="color:var(--gold-400);font-weight:600;">${esc(h.holiday)}</li>`).join('')+
+        `</ul><div class="small muted" style="margin-top:6px;">${holidays.length} liberty day(s), ${weekends} weekend days</div>`
+        :`<div class="muted small">No federal holidays. ${weekends} weekend days.</div>`}</div>
+      <div class="card"><h3>Personnel Pool</h3><div class="small">
+        <div class="flex-between"><span>MSB OOD</span><b>${cnt('MSB','OOD')}</b></div>
+        <div class="flex-between"><span>MSB AOOD</span><b>${cnt('MSB','AOOD')}</b></div>
+        <div class="flex-between"><span>MEF CE OOD</span><b>${cnt('MEF_CE','OOD')}</b></div>
+        <div class="flex-between"><span>MEF CE AOOD</span><b>${cnt('MEF_CE','AOOD')}</b></div></div></div>
+      <div class="card"><h3>Owed Lighter Month</h3>${ owed.length?
+        '<ul style="margin:0;padding-left:16px;" class="small">'+owed.map(o=>`<li>${o.level==='red'?'🔴':'🟡'} <b>${esc(o.section)}</b> <span class="muted">${esc(o.reason)}</span></li>`).join('')+'</ul>'
+        :'<div class="muted small">None flagged — all sections clear.</div>'}</div>
+      <div class="card"><h3>History Loaded</h3><div class="small">
+        <div class="flex-between"><span>Months</span><b>${burden.months.length}</b></div>
+        <div class="flex-between"><span>Sections tracked</span><b>${Object.keys(burden.bySection).length}</b></div>
+        <div class="muted" style="margin-top:6px;">Manage on the History tab.</div></div></div>
+    </div>`;
+
+  if(state.roster){ html+=renderRosterBlock(); }
+  document.getElementById('tab-generate').innerHTML=html;
+
+  document.getElementById('selMonth').onchange=e=>{ state.target.month=+e.target.value; persist(); render(); };
+  document.getElementById('selYear').onchange=e=>{ state.target.year=+e.target.value; persist(); render(); };
+  document.getElementById('selStart').onchange=e=>{ state.target.mefCeStart=+e.target.value; persist(); render(); };
+  document.getElementById('chkMsb').onchange=e=>{ state.target.fillMsb=e.target.checked; persist(); };
+}
+function doGenerate(){
+  const t=state.target, cal=buildCalendar(t.year,t.month,t.mefCeStart), burden=summarize(state.history);
+  state.roster=generateRoster(cal,state.personnel,burden,{mefCeStart:t.mefCeStart,fillMsb:t.fillMsb});
+  state.fairness=gradeRoster(state.roster,burden); render();
+  toast('Roster generated. Scroll down to review, edit, and export.');
+}
+function renderRosterBlock(){
+  const f=state.fairness, r=state.roster;
+  const gc='g'+f.grade, barColor=f.score>=80?'#22c55e':f.score>=60?'#eab308':'#ef4444';
+  let flags = f.flags.length? f.flags.map(x=>`<li>${x.level==='red'?'🔴':'🟡'} ${esc(x.msg)}</li>`).join('')
+                            : '<li style="color:#4ade80;">✅ No fairness violations detected.</li>';
+  const oodOpts=eligible('OOD'), aoodOpts=eligible('AOOD');
+  const opt=(o,sel)=>`<option value="">— unassigned —</option>`+o.map(p=>
+    `<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.name)} [${esc(p.section)}]</option>`).join('');
+  let rows=r.days.map(d=>{ const cls=d.isHoliday?'row-holiday':d.isWeekend?'row-weekend':'';
+    return `<tr class="${cls}">
+      <td><b>${d.date}</b></td><td>${d.day}</td>
+      <td><select class="cellsel" onchange="swap(${d.date},'ood',this.value)">${opt(oodOpts,d.ood&&d.ood.id)}</select></td>
+      <td><b>${esc(d.ood&&d.ood.section)}</b></td><td class="small">${esc(d.ood&&d.ood.phone)}</td>
+      <td><select class="cellsel" onchange="swap(${d.date},'aood',this.value)">${opt(aoodOpts,d.aood&&d.aood.id)}</select></td>
+      <td><b>${esc(d.aood&&d.aood.section)}</b></td><td class="small">${esc(d.aood&&d.aood.phone)}</td>
+      <td class="small" style="color:#fb923c;font-weight:700;">${esc(d.holiday)}</td></tr>`; }).join('');
+  let supers=(r.supernumerary||[]).map(s=>`<tr class="row-super"><td colspan="2"><b>${esc(s.element)} — SUPERNUMERARY</b></td>
+    <td colspan="2">${esc(s.name)}</td><td colspan="5">${esc(s.phone)}</td></tr>`).join('');
+  const unfilled=(r.unassigned||[]).length;
+
+  return `<div class="card" id="rosterBlock">
+    <div class="flex-between"><h2>${esc(r.label)} — Review &amp; Edit</h2>
+      <div class="row no-print">
+        <button class="btn btn-primary" onclick="exportXlsx(state.roster)">⬇ Export Excel (.xlsx)</button>
+        <button class="btn btn-ghost" onclick="exportCsv(state.roster)">Export CSV</button>
+        <button class="btn btn-ghost" onclick="saveToHistory()">Save to History</button>
+        <button class="btn btn-ghost" onclick="window.print()">Print</button>
+      </div></div>
+    <div class="grid grid-2">
+      <div>
+        <div class="card" style="margin:0 0 12px;">
+          <div class="flex-between"><h3>Fairness Score</h3><div class="grade ${gc}">${f.grade} <span class="muted" style="font-size:16px;">(${f.score})</span></div></div>
+          <div class="bar2"><div style="width:${f.score}%;background:${barColor};"></div></div>
+          <ul class="small" style="margin:6px 0 0;padding-left:16px;">${flags}</ul>
+        </div>
+        ${ unfilled? `<div class="card" style="margin:0;border-color:#7f1d1d;"><h3 class="tag-red">Unfilled / Forced Slots (${unfilled})</h3>
+          <ul class="small" style="margin:0;padding-left:16px;max-height:160px;overflow:auto;">${
+          r.unassigned.map(u=>`<li>Day ${u.date} — ${esc(u.role||'section')}: ${esc(u.reason)}</li>`).join('')}</ul></div>`:''}
+        <div class="small muted" style="margin-top:8px;">Click any OOD/AOOD cell to swap. Yellow = weekend, amber = holiday. Score updates live.</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr><th>DATE</th><th>DAY</th><th>OOD</th><th>SECT</th><th>OOD#</th><th>AOOD</th><th>SECT</th><th>AOOD#</th><th>HOLIDAY</th></tr></thead>
+        <tbody>${rows}${supers}</tbody></table>
+      </div>
+    </div></div>`;
+}
+function swap(date,role,id){
+  const p=state.personnel.find(x=>x.id===id);
+  const d=state.roster.days.find(x=>x.date===date); if(!d) return;
+  d[role]=p?{id:p.id,name:p.name,section:p.section,phone:p.phone||'',rank:p.rank}:{name:'',section:'',phone:''};
+  state.fairness=gradeRoster(state.roster,summarize(state.history)); render();
+}
+function saveToHistory(){
+  const r=state.roster; const summary={month:r.month,year:r.year,label:r.label,mefCeStart:r.mefCeStart,
+    days:r.days.map(d=>({date:d.date,day:d.day,oodSection:(d.ood&&d.ood.section)||'',aoodSection:(d.aood&&d.aood.section)||'',
+      holiday:d.holiday||'',isWeekend:d.isWeekend}))};
+  const i=state.history.findIndex(h=>h.year===r.year&&h.month===r.month);
+  if(i>=0) state.history[i]=summary; else state.history.push(summary);
+  persist(); toast('Saved to history — future rosters will balance against this month.');
+}
+
+/* ---- RENDER: PERSONNEL ----------------------------------------------------- */
+function renderPersonnel(){
+  const bySection={}; state.personnel.forEach(p=>{ (bySection[p.section||'Unassigned']=bySection[p.section||'Unassigned']||[]).push(p); });
+  let blocks=Object.keys(bySection).sort().map(sec=>{
+    const rows=bySection[sec].map(p=>`<tr>
+      <td>${esc(p.name)}</td><td style="text-align:center;">${esc(p.rank)}</td>
+      <td style="text-align:center;"><select class="cellsel" onchange="editPerson('${p.id}','role',this.value)">
+        <option value="OOD" ${p.role==='OOD'?'selected':''}>OOD</option><option value="AOOD" ${p.role==='AOOD'?'selected':''}>AOOD</option></select></td>
+      <td class="small" style="text-align:center;">${esc(p.phone)}</td>
+      <td style="text-align:center;"><input style="width:150px;" value="${esc(p.status)}" onblur="editPerson('${p.id}','status',this.value)" placeholder="e.g. limited duty no driving"/></td>
+      <td style="text-align:center;"><input style="width:110px;" value="${(p.unavailable||[]).join(', ')}" onblur="editUnavail('${p.id}',this.value)" placeholder="5, 6, 19"/></td>
+      <td style="text-align:center;"><button class="btn btn-ghost small" style="padding:2px 8px;" onclick="delPerson('${p.id}')">✕</button></td></tr>`).join('');
+    return `<div style="margin-bottom:14px;"><div style="color:var(--gold-400);font-weight:700;margin-bottom:4px;">${esc(sec)} (${bySection[sec].length})</div>
+      <table><thead><tr><th>Name</th><th>Rank</th><th>Role</th><th>Phone</th><th>Status / Chit</th><th>Unavailable dates</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }).join('');
+
+  document.getElementById('tab-personnel').innerHTML=`
+    <div class="card"><h2>Add Personnel</h2>
+      <div class="row">
+        <div><label class="lbl">Name (Rank Last, First)</label><input id="pName" style="width:200px;" placeholder="Capt Smith, John A."/></div>
+        <div><label class="lbl">Rank</label><input id="pRank" style="width:80px;" placeholder="Capt"/></div>
+        <div><label class="lbl">Section</label><input id="pSection" style="width:90px;" placeholder="G3"/></div>
+        <div><label class="lbl">Phone</label><input id="pPhone" style="width:130px;" placeholder="760-555-0000"/></div>
+        <div><label class="lbl">Role</label><select id="pRole"><option>OOD</option><option>AOOD</option></select></div>
+        <div><label class="lbl">Pool</label><select id="pPool"><option value="MSB">MSB</option><option value="MEF_CE">MEF CE</option></select></div>
+        <div><label class="lbl">&nbsp;</label><button class="btn btn-primary" onclick="addPerson()">Add</button></div>
+      </div>
+      <div style="margin-top:8px;"><input id="pStatus" style="width:100%;" placeholder="Status / chit (optional): legal hold, limited duty no driving, no weapons…"/></div>
+    </div>
+    <div class="card"><h3>CSV Import</h3>
+      <div class="small muted" style="margin-bottom:6px;">Headers: Name, Rank, Section, Phone, Role, Pool, Status</div>
+      <textarea id="csvBox" style="width:100%;height:90px;font-family:monospace;font-size:12px;" placeholder="Name,Rank,Section,Phone,Role,Pool,Status&#10;Capt Smith John,Capt,G3,760-555-0000,OOD,MEF_CE,"></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn btn-ghost" onclick="importCsv(false)">Append</button>
+        <button class="btn btn-ghost" onclick="importCsv(true)">Replace All</button>
+        <button class="btn btn-ghost" onclick="resetPersonnel()">Reset to Sample</button>
+      </div>
+    </div>
+    <div class="card"><h2>Roster (${state.personnel.length})</h2>${blocks}</div>`;
+}
+function addPerson(){
+  const g=id=>document.getElementById(id).value.trim();
+  const name=g('pName'); if(!name){ toast('Name required.'); return; }
+  const section=g('pSection').toUpperCase();
+  state.personnel.push({id:(section||'UNK')+'-'+Date.now(),name,rank:g('pRank'),section,phone:g('pPhone'),
+    role:document.getElementById('pRole').value,pool:document.getElementById('pPool').value,status:g('pStatus')});
+  persist(); render(); toast('Added.');
+}
+function editPerson(id,field,val){ const p=state.personnel.find(x=>x.id===id); if(!p) return; p[field]=val; persist(); }
+function editUnavail(id,val){ const p=state.personnel.find(x=>x.id===id); if(!p) return;
+  p.unavailable=val.split(',').map(s=>parseInt(s.trim(),10)).filter(Number.isFinite); persist(); }
+function delPerson(id){ state.personnel=state.personnel.filter(p=>p.id!==id); persist(); render(); }
+function resetPersonnel(){ if(confirm('Reset personnel to the sample list?')){ state.personnel=JSON.parse(JSON.stringify(DEFAULT_PERSONNEL)); persist(); render(); } }
+function importCsv(replace){
+  const txt=document.getElementById('csvBox').value.trim(); if(!txt){ toast('Paste CSV first.'); return; }
+  const lines=txt.split(/\r?\n/).filter(l=>l.trim()); const headers=lines[0].split(',').map(h=>h.trim().toLowerCase());
+  const idx=names=>headers.findIndex(h=>names.some(n=>h.includes(n)));
+  const ci={name:idx(['name']),rank:idx(['rank','grade']),section:idx(['section','directorate','unit']),
+    phone:idx(['phone','cell','contact','number']),role:idx(['role','duty','position']),pool:idx(['pool']),status:idx(['status','chit','remarks'])};
+  const out=[]; for(let i=1;i<lines.length;i++){ const c=lines[i].split(',').map(x=>x.trim());
+    const name=ci.name>=0?c[ci.name]:''; if(!name) continue; const section=ci.section>=0?c[ci.section].toUpperCase():'';
+    out.push({id:(section||'UNK')+'-'+i+'-'+Date.now(),name,rank:ci.rank>=0?c[ci.rank]:'',section,phone:ci.phone>=0?c[ci.phone]:'',
+      role:ci.role>=0?c[ci.role].toUpperCase():'',pool:ci.pool>=0?c[ci.pool].toUpperCase():(['HQ','CSSC'].includes(section)?'MSB':'MEF_CE'),
+      status:ci.status>=0?c[ci.status]:''}); }
+  state.personnel=replace?out:state.personnel.concat(out); persist(); render(); toast(`Imported ${out.length} personnel.`);
+}
+
+/* ---- RENDER: HISTORY ------------------------------------------------------- */
+function renderHistory(){
+  const burden=summarize(state.history), sections=Object.keys(burden.bySection).sort(), months=burden.months;
+  const cellColor=st=>{ const sp=(st&&(st.weekend+st.holiday))||0; if(st&&st.holiday) return 'background:rgba(239,68,68,.35);';
+    if(sp>=2) return 'background:rgba(249,115,22,.35);'; if(sp===1) return 'background:rgba(234,179,8,.3);'; return ''; };
+  let bt = months.length? `<div style="overflow-x:auto;"><table><thead><tr><th>Section</th>${months.map(m=>`<th>${m}</th>`).join('')}<th>Σ Wknd</th><th>Σ Hol</th></tr></thead><tbody>`+
+    sections.map(sec=>{ const tot=burden.bySection[sec];
+      return `<tr><td><b>${esc(sec)}</b></td>`+months.map(m=>{ const st=burden.byMonth[m]&&burden.byMonth[m][sec];
+        return `<td style="text-align:center;${cellColor(st)}">${st?st.total:'·'}${st&&(st.weekend||st.holiday)?`<div style="font-size:10px;">${st.weekend?st.weekend+'w':''}${st.holiday?' '+st.holiday+'h':''}</div>`:''}</td>`;
+      }).join('')+`<td style="text-align:center;"><b>${tot.weekend}</b></td><td style="text-align:center;"><b>${tot.holiday}</b></td></tr>`;
+    }).join('')+`</tbody></table></div><div class="small muted" style="margin-top:6px;">Cell = total duties; <b>w</b> = weekend, <b>h</b> = holiday.</div>`
+    : '<div class="muted">No history yet. Upload past rosters below.</div>';
+
+  const list=[...state.history].sort((a,b)=>(b.year-a.year)||(b.month-a.month)).map(r=>
+    `<tr><td>${esc(r.label||(r.year+'-'+r.month))}</td><td style="text-align:center;">${(r.days||[]).length}</td>
+     <td style="text-align:center;"><button class="btn btn-ghost small" style="padding:2px 8px;" onclick="delHistory(${r.year},${r.month})">Remove</button></td></tr>`).join('');
+
+  document.getElementById('tab-history').innerHTML=`
+    <div class="card"><h2>Historical Roster Import</h2>
+      <div class="small muted" style="margin-bottom:8px;">Upload completed <b>.xlsx</b> rosters. They are parsed in your browser and feed the fairness algorithm. (Filenames like <i>May_2026_OOD_AOOD_Duty_Roster.xlsx</i> work best.)</div>
+      <input type="file" id="histFiles" accept=".xlsx" multiple onchange="uploadHistory(this)"/>
+    </div>
+    <div class="card"><h2>Weekend / Holiday Burden by Section</h2>${bt}</div>
+    <div class="card"><h2>Loaded Months (${state.history.length})</h2>
+      <table><thead><tr><th>Month</th><th>Days</th><th></th></tr></thead><tbody>${list}</tbody></table>
+      <div class="row" style="margin-top:10px;"><button class="btn btn-ghost" onclick="resetHistory()">Reset to Seed (5 months)</button></div>
+    </div>`;
+}
+async function uploadHistory(input){
+  const files=[...input.files]; if(!files.length) return; let ok=0, bad=[];
+  for(const f of files){ try{ const p=await parseRosterFile(f);
+    if(!p.month||!p.year){ bad.push(f.name+' (no month/year in filename)'); continue; }
+    const summary={month:p.month,year:p.year,label:p.label,days:p.days};
+    const i=state.history.findIndex(h=>h.year===p.year&&h.month===p.month);
+    if(i>=0) state.history[i]=summary; else state.history.push(summary); ok++;
+  }catch(e){ bad.push(f.name+' ('+e.message+')'); } }
+  persist(); render(); toast(`Parsed ${ok} roster(s).`+(bad.length?` Failed: ${bad.join('; ')}`:''));
+  input.value='';
+}
+function delHistory(y,m){ state.history=state.history.filter(h=>!(h.year===y&&h.month===m)); persist(); render(); }
+function resetHistory(){ if(confirm('Reset history to the seeded 5 months?')){ state.history=JSON.parse(JSON.stringify(SEED_HISTORY)); persist(); render(); } }
+
+/* ---- RENDER: ABOUT --------------------------------------------------------- */
+function renderAbout(){
+  document.getElementById('tab-about').innerHTML=`
+    <div class="card"><h2>How to use this tool</h2>
+      <ol style="line-height:1.7;">
+        <li><b>Generate tab:</b> pick the month/year, then <b>Generate Roster</b>. Days 1–15 fill from HQ/CSSC; days 16–end from the MEF CE directorates.</li>
+        <li><b>Review &amp; edit:</b> click any OOD/AOOD cell to swap a person. The fairness grade updates instantly. Yellow rows = weekends, amber = holidays.</li>
+        <li><b>Export Excel</b> for the formatted <code>.xlsx</code> (matches the template: colors, fonts, supernumerary rows), or <b>Print</b> straight from the browser.</li>
+        <li><b>Personnel tab:</b> add/edit/remove watch standers, mark unavailable dates, set exemption status, or paste a CSV.</li>
+        <li><b>History tab:</b> upload past rosters so the fairness engine knows who carried weekends/holidays recently. Comes seeded with 5 months.</li>
+      </ol>
+    </div>
+    <div class="card"><h2>Saving your work</h2>
+      <p>Your data is kept automatically in this browser. To move it between computers (or back it up), use <b>💾 Save Data</b> in the top bar — it downloads a <code>duty_roster_data.json</code> file. On another computer, open this same HTML file and click <b>📂 Load Data</b> to restore everything.</p>
+      <p class="small muted">Nothing is uploaded anywhere — this file runs entirely on your machine. No install, no server, no network required (except the one-time load of the Excel library for <code>.xlsx</code> export; CSV/Print always work offline).</p>
+    </div>
+    <div class="card"><h2>Fairness rules enforced</h2>
+      <ul style="line-height:1.7;">
+        <li>No section gets <b>weekend or holiday</b> duty in consecutive months (heavily weighted).</li>
+        <li>Special days go to the lightest-burden sections first; totals stay balanced.</li>
+        <li>No individual stands duty on back-to-back days (BnO 1601.1).</li>
+        <li>Rank eligibility + exemptions (legal hold, limited duty, no-weapons, etc.) are honored.</li>
+        <li>OOD and AOOD preferred from different companies.</li>
+      </ul>
+      <div class="small muted">POC: 1stLt Joseph, James L. — HQ Co XO / S-6, I MSB.</div>
+    </div>`;
+}
+
+/* ---- MAIN RENDER ----------------------------------------------------------- */
+function render(){
+  renderNav();
+  for(const [id] of TABS) document.getElementById('tab-'+id).classList.add('hide');
+  document.getElementById('tab-'+state.tab).classList.remove('hide');
+  if(state.tab==='generate') renderGenerate();
+  else if(state.tab==='personnel') renderPersonnel();
+  else if(state.tab==='history') renderHistory();
+  else if(state.tab==='about') renderAbout();
+}
+loadState(); render();
+</script>
+</body>
+</html>
