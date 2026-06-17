@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: #0b1220;
+  color: #e5e7eb;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply bg-navy-800 border border-navy-600 rounded-lg p-4 shadow-lg;
+  }
+  .btn {
+    @apply px-4 py-2 rounded-md font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-gold-500 text-navy-900 hover:bg-gold-400;
+  }
+  .btn-ghost {
+    @apply btn bg-navy-700 text-gray-200 hover:bg-navy-600 border border-navy-600;
+  }
+  .input {
+    @apply bg-navy-900 border border-navy-600 rounded-md px-3 py-2 text-gray-100 focus:outline-none focus:ring-2 focus:ring-gold-500;
+  }
+  .label {
+    @apply text-xs uppercase tracking-wide text-gray-400 font-semibold;
+  }
+}
+
+/* Roster row coloring to mirror the Excel export */
+.row-weekend { background-color: rgba(255, 255, 0, 0.18); }
+.row-holiday { background-color: rgba(255, 192, 0, 0.22); }
+.row-super { background-color: #000; color: #fff; }

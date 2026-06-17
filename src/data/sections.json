@@ -1,0 +1,22 @@
+{
+  "msb": [
+    { "code": "HQ", "name": "Headquarters Company", "pool": "MSB" },
+    { "code": "CSSC", "name": "Combat Service Support Company", "pool": "MSB" }
+  ],
+  "mefce": [
+    { "code": "G1", "name": "Manpower", "pool": "MEF_CE" },
+    { "code": "G2", "name": "Intelligence", "pool": "MEF_CE" },
+    { "code": "G3", "name": "Operations", "pool": "MEF_CE" },
+    { "code": "G4", "name": "Logistics", "pool": "MEF_CE" },
+    { "code": "G6", "name": "Communications", "pool": "MEF_CE" },
+    { "code": "G7", "name": "Training & Education", "pool": "MEF_CE" },
+    { "code": "G8", "name": "Finance / Comptroller", "pool": "MEF_CE" },
+    { "code": "CMST", "name": "Communication Strategy & Operations", "pool": "MEF_CE" },
+    { "code": "G5/SSEC", "name": "Plans / Special Security (rare)", "pool": "MEF_CE" }
+  ],
+  "aliases": {
+    "COMMSTRAT": "CMST",
+    "CMST/COMMSTRAT": "CMST",
+    "MEMORIAL 96": "MEMORIAL DAY 96"
+  }
+}

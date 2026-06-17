@@ -1,0 +1,125 @@
+{
+  "_note": "Seed historical rosters extracted from 5 completed months. Used to train the fairness algorithm before any SharePoint sync. OOD/AOOD names were not present in the source extracts, so only section-level data is seeded.",
+  "rosters": [
+    {
+      "month": 1,
+      "year": 2026,
+      "label": "January 2026",
+      "mefCeStart": 14,
+      "days": [
+        { "date": 14, "day": "Wed", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 15, "day": "Thu", "oodSection": "G4", "aoodSection": "HQ", "holiday": "" },
+        { "date": 16, "day": "Fri", "oodSection": "G3", "aoodSection": "CSSC", "holiday": "MLK DAY 96" },
+        { "date": 17, "day": "Sat", "oodSection": "G2", "aoodSection": "HQ", "holiday": "" },
+        { "date": 18, "day": "Sun", "oodSection": "CSSC", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 19, "day": "Mon", "oodSection": "HQ", "aoodSection": "HQ", "holiday": "MLK DAY 96" },
+        { "date": 20, "day": "Tue", "oodSection": "HQ", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 21, "day": "Wed", "oodSection": "G6", "aoodSection": "HQ", "holiday": "" },
+        { "date": 22, "day": "Thu", "oodSection": "HQ", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 23, "day": "Fri", "oodSection": "G1", "aoodSection": "HQ", "holiday": "" },
+        { "date": 24, "day": "Sat", "oodSection": "G1", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 25, "day": "Sun", "oodSection": "CMST", "aoodSection": "HQ", "holiday": "" },
+        { "date": 26, "day": "Mon", "oodSection": "HQ", "aoodSection": "HQ", "holiday": "" },
+        { "date": 27, "day": "Tue", "oodSection": "CSSC", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 28, "day": "Wed", "oodSection": "G2", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 29, "day": "Thu", "oodSection": "G6", "aoodSection": "HQ", "holiday": "" },
+        { "date": 30, "day": "Fri", "oodSection": "G8", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 31, "day": "Sat", "oodSection": "G3", "aoodSection": "CSSC", "holiday": "" }
+      ]
+    },
+    {
+      "month": 2,
+      "year": 2026,
+      "label": "February 2026",
+      "mefCeStart": 17,
+      "days": [
+        { "date": 13, "day": "Fri", "oodSection": "HQ", "aoodSection": "CSSC", "holiday": "PRESIDENTS DAY 96" },
+        { "date": 14, "day": "Sat", "oodSection": "HQ", "aoodSection": "HQ", "holiday": "PRESIDENTS DAY 96" },
+        { "date": 15, "day": "Sun", "oodSection": "G3", "aoodSection": "CSSC", "holiday": "PRESIDENTS DAY 96" },
+        { "date": 16, "day": "Mon", "oodSection": "HQ", "aoodSection": "CSSC", "holiday": "PRESIDENTS DAY 96" },
+        { "date": 17, "day": "Tue", "oodSection": "HQ", "aoodSection": "HQ", "holiday": "" },
+        { "date": 18, "day": "Wed", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 19, "day": "Thu", "oodSection": "G6", "aoodSection": "HQ", "holiday": "" },
+        { "date": 20, "day": "Fri", "oodSection": "HQ", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 21, "day": "Sat", "oodSection": "G1", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 22, "day": "Sun", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 23, "day": "Mon", "oodSection": "CMST", "aoodSection": "HQ", "holiday": "" },
+        { "date": 24, "day": "Tue", "oodSection": "G1", "aoodSection": "HQ", "holiday": "" },
+        { "date": 25, "day": "Wed", "oodSection": "G2", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 26, "day": "Thu", "oodSection": "G6", "aoodSection": "HQ", "holiday": "" },
+        { "date": 27, "day": "Fri", "oodSection": "G8", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 28, "day": "Sat", "oodSection": "G3", "aoodSection": "CSSC", "holiday": "" }
+      ]
+    },
+    {
+      "month": 3,
+      "year": 2026,
+      "label": "March 2026",
+      "mefCeStart": 17,
+      "days": [
+        { "date": 17, "day": "Tue", "oodSection": "G1", "aoodSection": "HQ", "holiday": "" },
+        { "date": 18, "day": "Wed", "oodSection": "G3", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 19, "day": "Thu", "oodSection": "G2", "aoodSection": "HQ", "holiday": "" },
+        { "date": 20, "day": "Fri", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 21, "day": "Sat", "oodSection": "G2", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 22, "day": "Sun", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 23, "day": "Mon", "oodSection": "G6", "aoodSection": "HQ", "holiday": "" },
+        { "date": 24, "day": "Tue", "oodSection": "G8", "aoodSection": "HQ", "holiday": "" },
+        { "date": 25, "day": "Wed", "oodSection": "CMST", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 26, "day": "Thu", "oodSection": "G1", "aoodSection": "HQ", "holiday": "" },
+        { "date": 27, "day": "Fri", "oodSection": "G6", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 28, "day": "Sat", "oodSection": "G3", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 29, "day": "Sun", "oodSection": "G8", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 30, "day": "Mon", "oodSection": "HQ", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 31, "day": "Tue", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" }
+      ]
+    },
+    {
+      "month": 5,
+      "year": 2025,
+      "label": "May 2025",
+      "mefCeStart": 16,
+      "days": [
+        { "date": 16, "day": "Fri", "oodSection": "G3", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 17, "day": "Sat", "oodSection": "G2", "aoodSection": "HQ", "holiday": "" },
+        { "date": 18, "day": "Sun", "oodSection": "G1", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 19, "day": "Mon", "oodSection": "G3", "aoodSection": "HQ", "holiday": "" },
+        { "date": 20, "day": "Tue", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 21, "day": "Wed", "oodSection": "G6", "aoodSection": "HQ", "holiday": "" },
+        { "date": 22, "day": "Thu", "oodSection": "G7", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 23, "day": "Fri", "oodSection": "CMST", "aoodSection": "HQ", "holiday": "MEMORIAL DAY 96" },
+        { "date": 24, "day": "Sat", "oodSection": "G1", "aoodSection": "CSSC", "holiday": "MEMORIAL DAY 96" },
+        { "date": 25, "day": "Sun", "oodSection": "G7", "aoodSection": "HQ", "holiday": "MEMORIAL DAY 96" },
+        { "date": 26, "day": "Mon", "oodSection": "G8", "aoodSection": "CSSC", "holiday": "MEMORIAL DAY 96" },
+        { "date": 27, "day": "Tue", "oodSection": "G5/SSEC", "aoodSection": "HQ", "holiday": "" },
+        { "date": 28, "day": "Wed", "oodSection": "G2", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 29, "day": "Thu", "oodSection": "G6", "aoodSection": "HQ", "holiday": "" },
+        { "date": 30, "day": "Fri", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 31, "day": "Sat", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" }
+      ]
+    },
+    {
+      "month": 5,
+      "year": 2026,
+      "label": "May 2026",
+      "mefCeStart": 16,
+      "days": [
+        { "date": 16, "day": "Sat", "oodSection": "G7", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 17, "day": "Sun", "oodSection": "G1", "aoodSection": "HQ", "holiday": "" },
+        { "date": 18, "day": "Mon", "oodSection": "G8", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 19, "day": "Tue", "oodSection": "G2", "aoodSection": "HQ", "holiday": "" },
+        { "date": 20, "day": "Wed", "oodSection": "G4", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 21, "day": "Thu", "oodSection": "CMST", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 22, "day": "Fri", "oodSection": "G2", "aoodSection": "CSSC", "holiday": "MEMORIAL DAY 96" },
+        { "date": 23, "day": "Sat", "oodSection": "G6", "aoodSection": "HQ", "holiday": "" },
+        { "date": 24, "day": "Sun", "oodSection": "G3", "aoodSection": "HQ", "holiday": "" },
+        { "date": 25, "day": "Mon", "oodSection": "CMST", "aoodSection": "CSSC", "holiday": "MEMORIAL DAY 96" },
+        { "date": 26, "day": "Tue", "oodSection": "G4", "aoodSection": "HQ", "holiday": "" },
+        { "date": 27, "day": "Wed", "oodSection": "G6", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 28, "day": "Thu", "oodSection": "G3", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 29, "day": "Fri", "oodSection": "G7", "aoodSection": "CSSC", "holiday": "" },
+        { "date": 30, "day": "Sat", "oodSection": "G8", "aoodSection": "CSSC", "holiday": "" }
+      ]
+    }
+  ]
+}

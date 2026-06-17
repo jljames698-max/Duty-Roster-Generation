@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
+server/data/cache/
+server/data/syncState.json
+server/data/personnel.json
+server/data/history.json
+!server/data/.gitkeep

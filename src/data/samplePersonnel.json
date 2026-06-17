@@ -1,0 +1,60 @@
+{
+  "_note": "Sample personnel for local/offline demo. Replace via Personnel page, CSV import, or SharePoint manpower sync. Phone numbers are fictional. Names are placeholders.",
+  "personnel": [
+    { "id": "hq-ood-1", "name": "Capt Reyes, Marcus A.", "rank": "Capt", "section": "HQ", "phone": "760-555-0101", "role": "OOD", "pool": "MSB", "status": "" },
+    { "id": "hq-ood-2", "name": "1stLt Holt, Dana R.", "rank": "1stLt", "section": "HQ", "phone": "760-555-0102", "role": "OOD", "pool": "MSB", "status": "" },
+    { "id": "hq-ood-3", "name": "GySgt Park, Steven L.", "rank": "GySgt", "section": "HQ", "phone": "760-555-0103", "role": "OOD", "pool": "MSB", "status": "" },
+    { "id": "hq-ood-4", "name": "SSgt Nguyen, Tran V.", "rank": "SSgt", "section": "HQ", "phone": "760-555-0104", "role": "OOD", "pool": "MSB", "status": "" },
+    { "id": "hq-aood-1", "name": "Sgt Carter, Bryan T.", "rank": "Sgt", "section": "HQ", "phone": "760-555-0105", "role": "AOOD", "pool": "MSB", "status": "" },
+    { "id": "hq-aood-2", "name": "Cpl Davis, Erica M.", "rank": "Cpl", "section": "HQ", "phone": "760-555-0106", "role": "AOOD", "pool": "MSB", "status": "" },
+    { "id": "hq-aood-3", "name": "Sgt Flores, Luis G.", "rank": "Sgt", "section": "HQ", "phone": "760-555-0107", "role": "AOOD", "pool": "MSB", "status": "" },
+
+    { "id": "cssc-ood-1", "name": "CWO3 Bell, Howard K.", "rank": "CWO3", "section": "CSSC", "phone": "760-555-0201", "role": "OOD", "pool": "MSB", "status": "" },
+    { "id": "cssc-ood-2", "name": "1stLt Mason, Olivia P.", "rank": "1stLt", "section": "CSSC", "phone": "760-555-0202", "role": "OOD", "pool": "MSB", "status": "" },
+    { "id": "cssc-ood-3", "name": "GySgt Ruiz, Hector J.", "rank": "GySgt", "section": "CSSC", "phone": "760-555-0203", "role": "OOD", "pool": "MSB", "status": "" },
+    { "id": "cssc-ood-4", "name": "SSgt Walker, Aaron D.", "rank": "SSgt", "section": "CSSC", "phone": "760-555-0204", "role": "OOD", "pool": "MSB", "status": "" },
+    { "id": "cssc-aood-1", "name": "Sgt Brooks, Tina S.", "rank": "Sgt", "section": "CSSC", "phone": "760-555-0205", "role": "AOOD", "pool": "MSB", "status": "" },
+    { "id": "cssc-aood-2", "name": "Cpl Hughes, Marcus E.", "rank": "Cpl", "section": "CSSC", "phone": "760-555-0206", "role": "AOOD", "pool": "MSB", "status": "" },
+    { "id": "cssc-aood-3", "name": "Sgt Patel, Niraj R.", "rank": "Sgt", "section": "CSSC", "phone": "760-555-0207", "role": "AOOD", "pool": "MSB", "status": "" },
+
+    { "id": "g1-ood-1", "name": "Capt Adams, Rachel L.", "rank": "Capt", "section": "G1", "phone": "760-555-1101", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g1-ood-2", "name": "1stLt Boone, Travis K.", "rank": "1stLt", "section": "G1", "phone": "760-555-1102", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g1-aood-1", "name": "Sgt Ortiz, Maria C.", "rank": "Sgt", "section": "G1", "phone": "760-555-1103", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g1-aood-2", "name": "Cpl Reed, Jacob T.", "rank": "Cpl", "section": "G1", "phone": "760-555-1104", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+
+    { "id": "g2-ood-1", "name": "Capt Lin, Wesley H.", "rank": "Capt", "section": "G2", "phone": "760-555-1201", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g2-ood-2", "name": "CWO2 Frost, Allen D.", "rank": "CWO2", "section": "G2", "phone": "760-555-1202", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g2-aood-1", "name": "Sgt Cole, Brianna F.", "rank": "Sgt", "section": "G2", "phone": "760-555-1203", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g2-aood-2", "name": "Cpl Hayes, Devin M.", "rank": "Cpl", "section": "G2", "phone": "760-555-1204", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+
+    { "id": "g3-ood-1", "name": "Capt Ward, Jonathan P.", "rank": "Capt", "section": "G3", "phone": "760-555-1301", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g3-ood-2", "name": "1stLt Diaz, Sofia R.", "rank": "1stLt", "section": "G3", "phone": "760-555-1302", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g3-aood-1", "name": "Sgt Morgan, Tyler J.", "rank": "Sgt", "section": "G3", "phone": "760-555-1303", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g3-aood-2", "name": "Cpl Bennett, Kayla N.", "rank": "Cpl", "section": "G3", "phone": "760-555-1304", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+
+    { "id": "g4-ood-1", "name": "Capt Foster, Liam B.", "rank": "Capt", "section": "G4", "phone": "760-555-1401", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g4-ood-2", "name": "GySgt Snyder, Paul R.", "rank": "GySgt", "section": "G4", "phone": "760-555-1402", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g4-aood-1", "name": "Sgt Russell, Dana K.", "rank": "Sgt", "section": "G4", "phone": "760-555-1403", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g4-aood-2", "name": "Cpl Perry, Aaron L.", "rank": "Cpl", "section": "G4", "phone": "760-555-1404", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+
+    { "id": "g6-ood-1", "name": "1stLt Coleman, Grace H.", "rank": "1stLt", "section": "G6", "phone": "760-555-1601", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g6-ood-2", "name": "SSgt Barnes, Eric T.", "rank": "SSgt", "section": "G6", "phone": "760-555-1602", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g6-aood-1", "name": "Sgt Gibson, Marcus D.", "rank": "Sgt", "section": "G6", "phone": "760-555-1603", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g6-aood-2", "name": "Cpl Fox, Lauren A.", "rank": "Cpl", "section": "G6", "phone": "760-555-1604", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+
+    { "id": "g7-ood-1", "name": "Capt Sullivan, Brent C.", "rank": "Capt", "section": "G7", "phone": "760-555-1701", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g7-ood-2", "name": "1stLt Wells, Hannah J.", "rank": "1stLt", "section": "G7", "phone": "760-555-1702", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g7-aood-1", "name": "Sgt Bishop, Carlos M.", "rank": "Sgt", "section": "G7", "phone": "760-555-1703", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g7-aood-2", "name": "Cpl Hart, Megan E.", "rank": "Cpl", "section": "G7", "phone": "760-555-1704", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+
+    { "id": "g8-ood-1", "name": "CWO2 Lowe, Derek S.", "rank": "CWO2", "section": "G8", "phone": "760-555-1801", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g8-ood-2", "name": "1stLt Page, Natalie R.", "rank": "1stLt", "section": "G8", "phone": "760-555-1802", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g8-aood-1", "name": "Sgt Dunn, Victor H.", "rank": "Sgt", "section": "G8", "phone": "760-555-1803", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+    { "id": "g8-aood-2", "name": "Cpl Lane, Sierra K.", "rank": "Cpl", "section": "G8", "phone": "760-555-1804", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+
+    { "id": "cmst-ood-1", "name": "1stLt Vaughn, Cody A.", "rank": "1stLt", "section": "CMST", "phone": "760-555-1901", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "cmst-ood-2", "name": "SSgt Ellis, Rhonda T.", "rank": "SSgt", "section": "CMST", "phone": "760-555-1902", "role": "OOD", "pool": "MEF_CE", "status": "" },
+    { "id": "cmst-aood-1", "name": "Sgt Mack, Trevor L.", "rank": "Sgt", "section": "CMST", "phone": "760-555-1903", "role": "AOOD", "pool": "MEF_CE", "status": "" },
+    { "id": "cmst-aood-2", "name": "Cpl Soto, Brianna P.", "rank": "Cpl", "section": "CMST", "phone": "760-555-1904", "role": "AOOD", "pool": "MEF_CE", "status": "" }
+  ]
+}
