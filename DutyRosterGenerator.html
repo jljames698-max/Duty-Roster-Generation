@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>I MSB / I MEF CE Duty Section Allocator</title>
-<!-- ExcelJS (formatted .xlsx export + reading uploaded rosters). If the network
-     blocks this CDN the app still works and falls back to CSV + Print. -->
+<!-- ExcelJS: formatted .xlsx export + reading uploaded rosters/manpower. If the
+     network blocks this CDN the app still works (CSV upload + CSV/Print export). -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
   :root{ --navy-900:#0b1220; --navy-800:#101a2e; --navy-700:#16233d; --navy-600:#1d2d4d;
@@ -14,62 +14,49 @@
   body{ margin:0; background:var(--navy-900); color:var(--text); font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:14px; }
   header{ background:var(--navy-800); border-bottom:1px solid var(--navy-600); }
   .bar{ max-width:1200px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .brand{ display:flex; align-items:center; gap:10px; }
-  .brand .lt{ color:var(--gold-400); font-weight:900; font-size:18px; }
-  .brand small{ color:var(--muted); display:block; }
+  .brand{ display:flex; align-items:center; gap:10px; } .brand .lt{ color:var(--gold-400); font-weight:900; font-size:18px; } .brand small{ color:var(--muted); display:block; }
   nav{ max-width:1200px; margin:0 auto; padding:0 16px; display:flex; gap:4px; }
   nav button{ background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); padding:10px 16px; font-weight:600; cursor:pointer; font-size:14px; }
   nav button.active{ color:var(--gold-400); border-bottom-color:var(--gold-500); }
   main{ max-width:1200px; margin:0 auto; padding:20px 16px 60px; }
   .card{ background:var(--navy-800); border:1px solid var(--navy-600); border-radius:10px; padding:16px; margin-bottom:16px; box-shadow:0 4px 14px rgba(0,0,0,.25); }
   h2{ margin:0 0 12px; font-size:18px; } h3{ margin:0 0 10px; font-size:15px; }
-  label.lbl{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700; margin-bottom:4px; }
+  label.lbl{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700; margin:10px 0 6px; }
   select,input,textarea{ background:var(--navy-900); border:1px solid var(--navy-600); color:var(--text); border-radius:6px; padding:8px 10px; font-size:14px; }
   select:focus,input:focus,textarea:focus{ outline:none; border-color:var(--gold-500); }
   .btn{ padding:9px 16px; border-radius:7px; font-weight:700; cursor:pointer; border:1px solid transparent; font-size:14px; }
   .btn-primary{ background:var(--gold-500); color:var(--navy-900); } .btn-primary:hover{ background:var(--gold-400); }
   .btn-ghost{ background:var(--navy-700); color:var(--text); border-color:var(--navy-600); } .btn-ghost:hover{ background:var(--navy-600); }
   .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
-  .grid{ display:grid; gap:14px; } .grid-4{ grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
-  .grid-2{ grid-template-columns:1fr 2fr; } @media (max-width:900px){ .grid-2{ grid-template-columns:1fr; } }
-  .countgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; }
-  .countbox label{ display:block; font-size:12px; font-weight:700; margin-bottom:3px; }
+  .grid{ display:grid; gap:14px; } .grid-2{ grid-template-columns:1fr 2fr; } @media (max-width:900px){ .grid-2{ grid-template-columns:1fr; } }
+  .countgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+  .countbox label{ display:block; font-size:11px; font-weight:700; margin-bottom:3px; color:var(--muted); }
   .countbox input{ width:100%; text-align:center; font-size:16px; font-weight:700; }
-  table{ width:100%; border-collapse:collapse; font-size:13px; }
-  th,td{ border:1px solid var(--navy-600); padding:5px 7px; text-align:left; }
-  thead th{ background:var(--navy-700); }
+  table{ width:100%; border-collapse:collapse; font-size:13px; } th,td{ border:1px solid var(--navy-600); padding:5px 7px; text-align:left; } thead th{ background:var(--navy-700); }
   .row-weekend{ background:rgba(255,255,0,.16); } .row-holiday{ background:rgba(255,192,0,.22); } .row-super{ background:#000; color:#fff; }
   .row-weekend td,.row-holiday td{ color:#f1f1f1; }
-  .muted{ color:var(--muted); }
+  .muted{ color:var(--muted); } .pct{ font-size:11px; color:var(--muted); }
   .flex-between{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
-  .grade{ font-size:34px; font-weight:900; }
-  .gA{color:#4ade80;} .gB{color:#86efac;} .gC{color:#facc15;} .gD{color:#fb923c;} .gF{color:#f87171;}
+  .grade{ font-size:34px; font-weight:900; } .gA{color:#4ade80;} .gB{color:#86efac;} .gC{color:#facc15;} .gD{color:#fb923c;} .gF{color:#f87171;}
   .bar2{ height:8px; background:var(--navy-900); border-radius:6px; overflow:hidden; margin:8px 0; } .bar2>div{ height:100%; }
-  .cellsel{ background:transparent; border:none; color:inherit; width:100%; font-weight:700; font-size:13px; cursor:pointer; }
-  .cellsel:focus{ outline:1px solid var(--gold-500); border-radius:4px; }
-  .toast{ position:fixed; bottom:18px; right:18px; background:var(--navy-700); border:1px solid var(--gold-500); padding:12px 16px; border-radius:8px; display:none; z-index:50; max-width:360px; }
+  .cellsel{ background:transparent; border:none; color:inherit; width:100%; font-weight:700; font-size:13px; cursor:pointer; } .cellsel:focus{ outline:1px solid var(--gold-500); border-radius:4px; }
+  .toast{ position:fixed; bottom:18px; right:18px; background:var(--navy-700); border:1px solid var(--gold-500); padding:12px 16px; border-radius:8px; display:none; z-index:50; max-width:380px; }
   footer{ text-align:center; color:var(--muted); font-size:12px; padding:18px; border-top:1px solid var(--navy-700); }
-  .hide{ display:none; } .small{ font-size:12px; }
-  .tag-red{color:#f87171;} .tag-yellow{color:#facc15;}
-  .pct{ font-size:11px; color:var(--muted); }
-  @media print{
-    header,nav,footer,.no-print{ display:none !important; }
-    body{ background:#fff; color:#000; } .card{ border:none; box-shadow:none; background:#fff; }
+  .hide{ display:none; } .small{ font-size:12px; } .tag-red{color:#f87171;} .tag-yellow{color:#facc15;}
+  .sub{ background:var(--navy-700); border-radius:8px; padding:10px 12px; margin-top:10px; }
+  @media print{ header,nav,footer,.no-print{ display:none !important; } body{ background:#fff; color:#000; } .card{ border:none; box-shadow:none; background:#fff; }
     .row-weekend{ background:#ffff00 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .row-holiday{ background:#ffc000 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .row-super{ background:#000 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    th,td{ color:#000; border-color:#000; } .cellsel{ color:#000; }
-  }
+    th,td{ color:#000; border-color:#000; } .cellsel{ color:#000; } }
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <div class="brand">
-      <span class="lt">I MSB</span>
+    <div class="brand"><span class="lt">I MSB</span>
       <div><div style="font-weight:700;">OOD / AOOD Duty <u>Section</u> Allocator</div>
-      <small>Manpower-based apportionment · I MSB Bn Duty Order (MEF CE)</small></div>
-    </div>
+      <small>Manpower-based apportionment · screens present-for-duty by rank, unit &amp; dates</small></div></div>
     <div class="row no-print">
       <button class="btn btn-ghost" onclick="saveDataFile()">💾 Save Data</button>
       <button class="btn btn-ghost" onclick="document.getElementById('loadData').click()">📂 Load Data</button>
@@ -83,25 +70,23 @@
   <section id="tab-history" class="hide"></section>
   <section id="tab-about" class="hide"></section>
 </main>
-<footer>POC: 1stLt Joseph, James L. — HQ Co XO / S-6, I MSB · Runs entirely in your browser · Apportionment per signed Bn Duty Order</footer>
+<footer>POC: 1stLt Joseph, James L. — HQ Co XO / S-6, I MSB · Runs entirely in your browser</footer>
 <div class="toast" id="toast"></div>
 
 <script>
 /* ============================================================================
-   I MSB / I MEF CE Duty SECTION Allocator (single-file, runs in the browser).
-
-   What it does (per the signed Bn Duty Order):
-   - Apportions duty DAYS to sections based on on-hand eligible strength
-     (a Marine present for duty >= 5 days that month). You enter the eligible
-     counts; the tool computes proportional quotas (largest-remainder rounding).
-   - Structure: MSB owns dates 1..15 (and the 31st on long months); MEF CE owns
-     16..30, then MEF CE is subdivided proportionally among its sections.
-   - Overlays weekend/holiday fairness AFTER the base math (no section carries
-     weekend/holiday duty in back-to-back months when avoidable).
-   - It allocates SECTIONS only. Sections fill their own personnel names.
+   I MSB / I MEF CE Duty SECTION Allocator (single-file, browser only).
+   - Counts eligible OOD (SSgt/GySgt/2ndLt/1stLt/Capt/WO1/CWO2-5) and
+     AOOD (Cpl/Sgt) watch standers SEPARATELY, by section.
+   - Screens "present for duty": excludes ineligible ranks, unmapped units, and
+     anyone whose status/absence end-date runs past the target month's end.
+   - Apportions duty DAYS to sections proportionally to eligible strength.
+       OOD : MSB days (1-15, +31) -> HQ/CSSC by OOD counts; MEF days -> sections.
+       AOOD: whole month -> HQ/CSSC by AOOD counts.
+   - Overlays weekend/holiday fairness after the proportional math.
+   - Allocates SECTIONS only; sections fill their own personnel names.
    ============================================================================ */
 
-/* ---- HOLIDAYS (CY26 I MEF special liberty schedule) ------------------------ */
 const HOLIDAYS=[
   {liberty_starts:"2025-12-31T16:30:00",liberty_ends:"2026-01-05T07:30:00",label:"NEW YEARS 96"},
   {liberty_starts:"2026-01-15T16:30:00",liberty_ends:"2026-01-20T07:30:00",label:"MLK DAY 96"},
@@ -116,9 +101,8 @@ const HOLIDAYS=[
   {liberty_starts:"2026-12-23T16:30:00",liberty_ends:"2026-12-28T07:30:00",label:"CHRISTMAS 96"},
   {liberty_starts:"2026-12-30T16:30:00",liberty_ends:"2027-01-04T07:30:00",label:"NEW YEARS 96"}
 ];
-
-const MSB_SECTIONS=["HQ","CSSC"];
-const MEF_SECTIONS=["G1","G2","G3","G4","G6","G7","G8","CMST"]; // G5/SSEC added when toggled
+const MEF_SECTIONS=["G1","G2","G3","G4","G5","G6","G7","G8","CMST"]; // SSEC added when toggled
+function allSections(){ return ["HQ","CSSC"].concat(MEF_SECTIONS, state.target.includeSSEC?["SSEC"]:[]); }
 const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -151,24 +135,24 @@ const SEED_HISTORY=[
   {date:28,day:"Thu",oodSection:"G3",holiday:""},{date:29,day:"Fri",oodSection:"G7",holiday:""},{date:30,day:"Sat",oodSection:"G8",holiday:""}]}
 ];
 
-/* Default eligible on-hand counts (illustrative — overwrite each month). */
-const DEFAULT_ELIGIBLE={ HQ:8, CSSC:17, G1:4, G2:19, G3:16, G4:25, G5:0, G6:10, G7:73, G8:10, CMST:8 };
+/* Default eligible counts {section:{ood,aood}} — illustrative, overwrite/upload each month.
+   HQ is OOD-heavy (officers/SNCOs); CSSC is AOOD-heavy (Cpl/Sgt) — per your note. */
+const DEFAULT_ELIG={ HQ:{ood:9,aood:3}, CSSC:{ood:4,aood:11},
+  G1:{ood:4,aood:0},G2:{ood:19,aood:0},G3:{ood:16,aood:0},G4:{ood:25,aood:0},G5:{ood:0,aood:0},
+  G6:{ood:10,aood:0},G7:{ood:73,aood:0},G8:{ood:10,aood:0},CMST:{ood:8,aood:0},SSEC:{ood:0,aood:0} };
 
 /* ---- CALENDAR -------------------------------------------------------------- */
 function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
-function parseLocal(s){ const [d,t='00:00:00']=s.split('T'); const [Y,M,D]=d.split('-').map(Number); const [h,mi,se]=t.split(':').map(Number);
-  return new Date(Y,M-1,D,h||0,mi||0,se||0); }
+function parseLocal(s){ const [d,t='00:00:00']=s.split('T'); const [Y,M,D]=d.split('-').map(Number); const [h,mi,se]=t.split(':').map(Number); return new Date(Y,M-1,D,h||0,mi||0,se||0); }
 function holidayLabelFor(y,m,date){ const s=new Date(y,m-1,date,0,0,0), e=new Date(y,m-1,date,23,59,59);
   for(const h of HOLIDAYS){ if(s<=parseLocal(h.liberty_ends)&&e>=parseLocal(h.liberty_starts)) return h.label; } return ''; }
 function buildCalendar(y,m,mefCeStart){ const n=daysInMonth(y,m), days=[];
   for(let date=1;date<=n;date++){ const dow=new Date(y,m-1,date).getDay(), label=holidayLabelFor(y,m,date);
     days.push({date,dow,day:DAY_NAMES[dow],isWeekend:dow===0||dow===6,holiday:label,isHoliday:!!label}); }
   return {year:y,month:m,monthName:MONTH_NAMES[m-1],label:`${MONTH_NAMES[m-1]} ${y}`,mefCeStart,daysInMonth:n,days}; }
-
-/* Which bucket owns a date: MSB owns 1..mefCeStart-1 and the 31st; MEF CE owns mefCeStart..30. */
 function bucketOf(date,mefCeStart){ if(date===31) return 'MSB'; if(date<mefCeStart) return 'MSB'; if(date<=30) return 'MEF_CE'; return 'MSB'; }
 
-/* ---- FAIRNESS (cross-month weekend/holiday overlay) ------------------------ */
+/* ---- FAIRNESS (cross-month weekend/holiday overlay for OOD sections) -------- */
 function monthKey(y,m){ return `${y}-${String(m).padStart(2,'0')}`; }
 function blank(){ return {total:0,weekend:0,holiday:0}; }
 function dWk(d){ return typeof d.isWeekend==='boolean'?d.isWeekend:(d.day==='Sat'||d.day==='Sun'); }
@@ -184,126 +168,159 @@ function priorMonthKey(b,y,m){ const t=monthKey(y,m), e=b.months.filter(x=>x<t);
 function burdenForMonth(b,k,s){ return (b.byMonth[k]&&b.byMonth[k][s])||blank(); }
 function recentBurden(b,s,bk,n=4){ const ks=b.months.filter(m=>!bk||m<=bk).slice(-n); let w=0,h=0,t=0;
   ks.forEach((k,i)=>{ const wt=i+1, st=(b.byMonth[k]&&b.byMonth[k][s])||blank(); w+=st.weekend*wt; h+=st.holiday*wt; t+=st.total*wt; }); return {weekend:w,holiday:h,total:t}; }
-function scoreSection(section,day,b,target,state){ const pk=priorMonthKey(b,target.year,target.month), prev=pk?burdenForMonth(b,pk,section):blank(), rec=recentBurden(b,section,pk);
-  const special=day.isWeekend||day.isHoliday; let sc=0; sc+=(state.assignedSpecial[section]||0)*0; // base balance handled by quota capacity
+function scoreSection(section,day,b,target,state2){ const pk=priorMonthKey(b,target.year,target.month), prev=pk?burdenForMonth(b,pk,section):blank(), rec=recentBurden(b,section,pk);
+  const special=day.isWeekend||day.isHoliday; let sc=0;
   if(special){ if(day.isHoliday&&prev.holiday>0) sc+=100; if(day.isWeekend&&prev.weekend>0) sc+=60; if(prev.weekend+prev.holiday>0) sc+=25;
-    sc+=(state.assignedWeekend[section]||0)*40; sc+=(state.assignedHoliday[section]||0)*80; sc+=rec.holiday*6+rec.weekend*3; }
+    sc+=(state2.assignedWeekend[section]||0)*40; sc+=(state2.assignedHoliday[section]||0)*80; sc+=rec.holiday*6+rec.weekend*3; }
   return sc; }
-function rankSections(secs,day,b,target,state){ return [...secs].map(s=>({section:s,score:scoreSection(s,day,b,target,state)}))
-  .sort((a,b2)=>a.score-b2.score||a.section.localeCompare(b2.section)); }
+function rankSections(secs,day,b,target,state2){ return [...secs].map(s=>({section:s,score:scoreSection(s,day,b,target,state2)})).sort((a,b2)=>a.score-b2.score||a.section.localeCompare(b2.section)); }
 function gradeRoster(g,b){ const pk=priorMonthKey(b,g.year,g.month),flags=[]; let pen=0; const tm={};
   for(const d of g.days){ const sec=d.ood&&d.ood.section; if(!sec) continue; tm[sec]=tm[sec]||blank(); tm[sec].total++; if(d.isWeekend)tm[sec].weekend++; if(d.isHoliday)tm[sec].holiday++; }
   for(const [sec,st] of Object.entries(tm)){ const prev=pk?burdenForMonth(b,pk,sec):blank();
     if(st.holiday>0&&prev.holiday>0){ pen+=20; flags.push({level:'red',msg:`${sec} carried holiday duty two months in a row.`}); }
     else if(st.weekend>0&&prev.weekend>0){ pen+=10; flags.push({level:'yellow',msg:`${sec} carried weekend duty two months in a row.`}); } }
   const score=Math.max(0,100-pen), grade=score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F'; return {score,grade,flags,thisMonth:tm}; }
-function owedLighterMonths(b,target){ const pk=priorMonthKey(b,target.year,target.month),out=[];
-  for(const sec of Object.keys(b.bySection)){ const prev=pk?burdenForMonth(b,pk,sec):blank();
-    if(prev.holiday>0) out.push({section:sec,reason:'carried holiday last month',level:'red'});
-    else if(prev.weekend>0) out.push({section:sec,reason:'carried weekend last month',level:'yellow'}); } return out; }
 
 /* ---- PROPORTIONAL QUOTAS (largest-remainder) ------------------------------- */
-function largestRemainder(weights,total){
-  const keys=Object.keys(weights); const sum=keys.reduce((a,k)=>a+(weights[k]||0),0); const q={}; keys.forEach(k=>q[k]=0);
-  if(total<=0) return q;
-  if(sum<=0){ for(let i=0;i<total;i++) q[keys[i%keys.length]]++; return q; } // no data -> even round-robin
-  const rem=[]; let used=0;
-  keys.forEach(k=>{ const raw=(weights[k]||0)/sum*total, f=Math.floor(raw); q[k]=f; used+=f; rem.push([k,raw-f]); });
-  let left=total-used; rem.sort((a,b)=>b[1]-a[1]);
-  for(let i=0;i<left;i++) q[rem[i%rem.length][0]]++;
-  return q;
-}
+function largestRemainder(weights,total){ const keys=Object.keys(weights); const sum=keys.reduce((a,k)=>a+(weights[k]||0),0); const q={}; keys.forEach(k=>q[k]=0);
+  if(total<=0||!keys.length) return q; if(sum<=0){ for(let i=0;i<total;i++) q[keys[i%keys.length]]++; return q; }
+  const rem=[]; let used=0; keys.forEach(k=>{ const raw=(weights[k]||0)/sum*total, f=Math.floor(raw); q[k]=f; used+=f; rem.push([k,raw-f]); });
+  let left=total-used; rem.sort((a,b)=>b[1]-a[1]); for(let i=0;i<left;i++) q[rem[i%rem.length][0]]++; return q; }
 
 /* ---- ALLOCATION ENGINE ----------------------------------------------------- */
-function allocateBucketDays(bucketDays,sections,quota,burden,target){
-  const cap={}; sections.forEach(s=>cap[s]=quota[s]||0);
-  const state={assignedSpecial:{},assignedWeekend:{},assignedHoliday:{}};
-  const ordered=[...bucketDays].sort((a,b)=>{ const r=x=>x.isHoliday?0:x.isWeekend?1:2; return r(a)-r(b)||a.date-b.date; });
-  const out={};
+function allocateBucketDays(bucketDays,sections,quota,burden,target){ const cap={}; sections.forEach(s=>cap[s]=quota[s]||0);
+  const st={assignedWeekend:{},assignedHoliday:{}}; const ordered=[...bucketDays].sort((a,b)=>{ const r=x=>x.isHoliday?0:x.isWeekend?1:2; return r(a)-r(b)||a.date-b.date; }); const out={};
   for(const day of ordered){ const avail=sections.filter(s=>cap[s]>0); if(!avail.length){ out[day.date]=''; continue; }
-    const sec=rankSections(avail,day,burden,target,state)[0].section; out[day.date]=sec; cap[sec]--;
-    if(day.isWeekend)state.assignedWeekend[sec]=(state.assignedWeekend[sec]||0)+1;
-    if(day.isHoliday)state.assignedHoliday[sec]=(state.assignedHoliday[sec]||0)+1; }
-  return out;
-}
-function allocateRoster(cal,eligible,cfg,burden){
-  const mefCeStart=cfg.mefCeStart;
-  const msbDays=[],mefDays=[];
-  for(const d of cal.days){ (bucketOf(d.date,mefCeStart)==='MSB'?msbDays:mefDays).push(d); }
-  // MSB quota (HQ vs CSSC)
-  const msbW={HQ:eligible.HQ||0,CSSC:eligible.CSSC||0};
-  const msbQuota=largestRemainder(msbW,msbDays.length);
-  // MEF CE quota (by section)
-  const mefSecs=MEF_SECTIONS.slice(); if(cfg.includeG5) mefSecs.push('G5');
-  const mefW={}; mefSecs.forEach(s=>mefW[s]=eligible[s]||0);
-  const mefQuota=largestRemainder(mefW,mefDays.length);
-  const target={year:cal.year,month:cal.month};
-  const msbAssign=allocateBucketDays(msbDays,['HQ','CSSC'].filter(s=>msbQuota[s]>0||(msbW[s]>0)),msbQuota,burden,target);
-  const mefActive=mefSecs.filter(s=>mefQuota[s]>0);
-  const mefAssign=allocateBucketDays(mefDays,mefActive,mefQuota,burden,target);
-  // build day rows; AOOD = HQ/CSSC support, cross-company preference
-  const aoodCount={HQ:0,CSSC:0};
-  const days=cal.days.map(d=>{
-    const isMsb=bucketOf(d.date,mefCeStart)==='MSB';
-    const sec=isMsb?(msbAssign[d.date]||''):(mefAssign[d.date]||'');
-    const oodCo=(sec==='HQ'||sec==='CSSC')?sec:'MEF_CE';
-    let aSec; const opp=oodCo==='HQ'?'CSSC':oodCo==='CSSC'?'HQ':null;
-    if(opp) aSec=opp; else aSec=(aoodCount.CSSC<=aoodCount.HQ)?'CSSC':'HQ';
-    aoodCount[aSec]++;
-    return {date:d.date,day:d.day,dow:d.dow,isWeekend:d.isWeekend,isHoliday:d.isHoliday,holiday:d.holiday,
-      pool:isMsb?'MSB':'MEF_CE', ood:{name:'',section:sec,phone:''}, aood:{name:'',section:aSec,phone:''}};
-  });
-  return {year:cal.year,month:cal.month,monthName:cal.monthName,label:cal.label,mefCeStart,days,
-    supernumerary:[{element:'HQ',name:'',section:'',phone:''},{element:'CSSC',name:'',section:'',phone:''},{element:'I MEF CE',name:'',section:'',phone:''}],
-    quota:{msbDays:msbDays.length,mefDays:mefDays.length,msbW,msbQuota,mefW,mefQuota,mefSecs}, unassigned:[]};
-}
+    const sec=rankSections(avail,day,burden,target,st)[0].section; out[day.date]=sec; cap[sec]--;
+    if(day.isWeekend)st.assignedWeekend[sec]=(st.assignedWeekend[sec]||0)+1; if(day.isHoliday)st.assignedHoliday[sec]=(st.assignedHoliday[sec]||0)+1; } return out; }
 
-/* ---- EXCEL / CSV ----------------------------------------------------------- */
+/* AOOD: HQ vs CSSC across the whole month, proportional to AOOD counts, with
+   in-month weekend/holiday balance so neither company hogs the special days. */
+function allocateAood(allDays,quota){ const cap={HQ:quota.HQ||0,CSSC:quota.CSSC||0}, sp={HQ:0,CSSC:0}, tot={HQ:0,CSSC:0}, out={};
+  const ordered=[...allDays].sort((a,b)=>{ const r=x=>x.isHoliday?0:x.isWeekend?1:2; return r(a)-r(b)||a.date-b.date; });
+  for(const day of ordered){ const avail=['HQ','CSSC'].filter(s=>cap[s]>0); if(!avail.length){ out[day.date]=''; continue; }
+    const special=day.isWeekend||day.isHoliday;
+    avail.sort((a,b)=> special ? (sp[a]-sp[b]||tot[a]-tot[b]||a.localeCompare(b)) : (tot[a]-tot[b]||sp[a]-sp[b]||a.localeCompare(b)));
+    const s=avail[0]; out[day.date]=s; cap[s]--; tot[s]++; if(special)sp[s]++; } return out; }
+
+function allocateRoster(cal,elig,cfg,burden){ const mefCeStart=cfg.mefCeStart; const msbDays=[],mefDays=[];
+  cal.days.forEach(d=> (bucketOf(d.date,mefCeStart)==='MSB'?msbDays:mefDays).push(d));
+  const E=(s,r)=> (elig[s]&&elig[s][r])||0;
+  // OOD — MSB
+  const msbOodW={HQ:E('HQ','ood'),CSSC:E('CSSC','ood')}; const msbOodQ=largestRemainder(msbOodW,msbDays.length);
+  // OOD — MEF CE
+  const mefSecs=MEF_SECTIONS.concat(cfg.includeSSEC?['SSEC']:[]); const mefOodW={}; mefSecs.forEach(s=>mefOodW[s]=E(s,'ood')); const mefOodQ=largestRemainder(mefOodW,mefDays.length);
+  // AOOD — HQ/CSSC whole month
+  const aoodW={HQ:E('HQ','aood'),CSSC:E('CSSC','aood')}; const aoodQ=largestRemainder(aoodW,cal.days.length);
+  const target={year:cal.year,month:cal.month};
+  const msbAssign=allocateBucketDays(msbDays,['HQ','CSSC'].filter(s=>msbOodQ[s]>0||msbOodW[s]>0),msbOodQ,burden,target);
+  const mefActive=mefSecs.filter(s=>mefOodQ[s]>0); const mefAssign=allocateBucketDays(mefDays,mefActive,mefOodQ,burden,target);
+  const aoodAssign=allocateAood(cal.days,aoodQ);
+  const days=cal.days.map(d=>{ const isMsb=bucketOf(d.date,mefCeStart)==='MSB';
+    return {date:d.date,day:d.day,dow:d.dow,isWeekend:d.isWeekend,isHoliday:d.isHoliday,holiday:d.holiday,pool:isMsb?'MSB':'MEF_CE',
+      ood:{name:'',section:(isMsb?msbAssign[d.date]:mefAssign[d.date])||'',phone:''}, aood:{name:'',section:aoodAssign[d.date]||'',phone:''}}; });
+  return {year:cal.year,month:cal.month,monthName:cal.monthName,label:cal.label,mefCeStart,days,
+    supernumerary:[{element:'HQ'},{element:'CSSC'},{element:'I MEF CE'}],
+    quota:{msbDays:msbDays.length,mefDays:mefDays.length,total:cal.days.length,msbOodW,msbOodQ,mefOodW,mefOodQ,aoodW,aoodQ,mefSecs}, unassigned:[]}; }
+
+/* ---- MANPOWER PARSING (rank/unit/status/end-date screening) ----------------- */
+function classifyRank(raw){ if(!raw) return null; const s=String(raw).toUpperCase().replace(/[.\s_]/g,'');
+  const pg=s.match(/^([EOW])-?(\d)/); if(pg){ const t=pg[1], n=+pg[2];
+    if(t==='E'){ if(n===4||n===5) return 'AOOD'; if(n===6||n===7) return 'OOD'; return null; }
+    if(t==='O'){ return (n>=1&&n<=3)?'OOD':null; } if(t==='W'){ return (n>=1&&n<=5)?'OOD':null; } }
+  if(/CAPT|CAPTAIN/.test(s)) return 'OOD';
+  if(/1STLT|1LT|FIRSTLIEUT/.test(s)) return 'OOD';
+  if(/2NDLT|2LT|SECONDLIEUT/.test(s)) return 'OOD';
+  if(/CWO|WARRANT|^WO\d?$|^W\d$/.test(s)) return 'OOD';
+  if(/GYSGT|GUNNERY/.test(s)) return 'OOD';
+  if(/SSGT|STAFFSGT|STAFFSERG/.test(s)) return 'OOD';
+  if(/MGYSGT|MASTERGUNNERY|SGTMAJ|SERGEANTMAJ|1STSGT|FIRSTSGT|MSGT|MASTERSGT/.test(s)) return null; // senior SNCOs not eligible
+  if(/LCPL|LANCECPL|LANCECORPORAL/.test(s)) return null; // Lance Corporal not eligible
+  if(/^SGT|SERGEANT/.test(s)) return 'AOOD';
+  if(/CPL|CORPORAL/.test(s)) return 'AOOD';
+  return null; }
+function mapUnit(raw){ if(!raw) return null; const s=String(raw).toUpperCase().replace(/\s/g,'');
+  if(s.includes('20141')){ const rest=s.replace(/20141/g,''); if(/H/.test(rest)) return 'HQ'; if(/S/.test(rest)) return 'CSSC'; return null; }
+  const g=s.match(/20371\D*([1-8])/); if(g) return 'G'+g[1];
+  if(s.includes('CMST')||s.includes('COMMSTRAT')) return 'CMST';
+  if(s.includes('SSEC')) return 'SSEC';
+  if(/^(HQ|CSSC|G[1-8]|CMST|SSEC)$/.test(s)) return s;
+  if(s.includes('HEADQUART')) return 'HQ'; if(s.includes('COMBATSERVICE')) return 'CSSC';
+  return null; }
+function statusPresent(raw){ if(!raw) return true; const s=String(raw).toLowerCase();
+  if(/leave|tad|tdy|deploy|ua\b|awol|legal|conf|brig|medical|hospital|wounded|wia|school|pcs|pca|maternit|convales|annual|terminal|appt|nmps/.test(s)) return false;
+  if(/limited|light/.test(s)) return false; return true; }
+function toDate(v){ if(v==null||v==='') return null; if(v instanceof Date) return isNaN(v)?null:v; const d=new Date(v); return isNaN(d)?null:d; }
+function splitCsvLine(l){ const out=[]; let cur='',q=false; for(let i=0;i<l.length;i++){ const ch=l[i];
+  if(q){ if(ch==='"'){ if(l[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+  else { if(ch===','){ out.push(cur); cur=''; } else if(ch==='"') q=true; else cur+=ch; } } out.push(cur); return out; }
+async function readManpowerRows(file){ const name=file.name.toLowerCase();
+  if(name.endsWith('.csv')){ const text=await file.text(); const lines=text.split(/\r?\n/).filter(l=>l.trim());
+    return {headers:splitCsvLine(lines[0]).map(h=>h.trim()), rows:lines.slice(1).map(splitCsvLine)}; }
+  if(typeof ExcelJS==='undefined') throw new Error('Excel reader not loaded on this network — upload a .csv or type counts.');
+  const buf=await file.arrayBuffer(); const wb=new ExcelJS.Workbook(); await wb.xlsx.load(buf); const ws=wb.worksheets[0];
+  const all=[]; ws.eachRow({includeEmpty:false},row=>{ const arr=[]; row.eachCell({includeEmpty:true},(c,i)=>{ arr[i-1]=c.value; }); all.push(arr); });
+  const txt=v=>String(v==null?'':(v.text||v.result||v)).toLowerCase();
+  let hi=0; for(let i=0;i<Math.min(all.length,15);i++){ const t=all[i].map(txt); if(t.some(x=>/rank|grade/.test(x))&&t.some(x=>/unit|ruc|mcc|uic|section|cmd/.test(x))){ hi=i; break; } }
+  return {headers:all[hi].map(v=>String(v==null?'':(v.text||v.result||v)).trim()), rows:all.slice(hi+1)}; }
+function findCol(headers,re){ return headers.findIndex(h=>re.test(String(h).toLowerCase())); }
+async function parseManpower(file){ const {headers,rows}=await readManpowerRows(file);
+  const ci={ rank:findCol(headers,/rank|grade|^pay/), unit:findCol(headers,/unit|ruc|mcc|uic|section|cmd/),
+    status:findCol(headers,/status|duty/), end:findCol(headers,/end|return|rtd|thru|depart|to ?date|date ?back|proj/), name:findCol(headers,/name/) };
+  if(ci.rank<0||ci.unit<0) throw new Error('Could not find Rank and Unit columns. Check the file headers, or type counts manually.');
+  const counts={}; allSections().forEach(s=>counts[s]={ood:0,aood:0});
+  const monthEnd=new Date(state.target.year,state.target.month,0);
+  const txt=v=> v==null?'':String(v.text||v.result||v).trim();
+  let included=0; const reasons={}; const excluded=[];
+  const note=(name,reason)=>{ reasons[reason]=(reasons[reason]||0)+1; if(excluded.length<80) excluded.push({name,reason}); };
+  for(const r of rows){ const rankS=txt(r[ci.rank]); if(!rankS) continue;
+    const nm=ci.name>=0?txt(r[ci.name]):rankS;
+    const role=classifyRank(rankS); if(!role){ note(nm,'rank not OOD/AOOD'); continue; }
+    const section=mapUnit(txt(r[ci.unit])); if(!section){ note(nm,'unit not mapped'); continue; }
+    const end=ci.end>=0?toDate(r[ci.end]):null; const statusS=ci.status>=0?txt(r[ci.status]):'';
+    if(end&&end>monthEnd){ note(nm,'absent past end of month'); continue; }
+    if(!statusPresent(statusS)&&!end){ note(nm,'not present for duty'); continue; }
+    if(!counts[section]) counts[section]={ood:0,aood:0}; counts[section][role]++; included++; }
+  return {counts,included,reasons,excluded,headers}; }
+async function uploadManpower(input){ const f=input.files[0]; if(!f) return;
+  try{ const res=await parseManpower(f);
+    if(res.counts.SSEC&&res.counts.SSEC.ood>0) state.target.includeSSEC=true;
+    state.elig=res.counts; state.screen={file:f.name,included:res.included,reasons:res.reasons,excluded:res.excluded,when:new Date().toISOString()};
+    persist(); render(); toast(`Screened ${res.included} eligible watch standers from ${f.name}. Review counts below.`);
+  }catch(e){ toast('Manpower parse failed: '+e.message); } input.value=''; }
+
+/* ---- EXCEL / CSV EXPORT ---------------------------------------------------- */
 const HEADERS=['DATE','DAY','OOD','SECTION','OOD#','AOOD','SECTION','AOOD#','Holiday']; const COLW=[6,12,32,10,16,32,10,16,18];
-async function exportXlsx(roster){
-  if(typeof ExcelJS==='undefined'){ toast('Excel library not loaded — exporting CSV instead.'); return exportCsv(roster); }
+async function exportXlsx(roster){ if(typeof ExcelJS==='undefined'){ toast('Excel library not loaded — exporting CSV.'); return exportCsv(roster); }
   const wb=new ExcelJS.Workbook(), ws=wb.addWorksheet(`${roster.monthName} ${roster.year}`,{pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
-  ws.columns=COLW.map(w=>({width:w}));
-  const bd={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-  const st=(row,font,fill)=>row.eachCell({includeEmpty:true},c=>{ c.font=font||{name:'Calibri',size:8,bold:true};
-    c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; c.border=bd; if(fill)c.fill=fill; });
+  ws.columns=COLW.map(w=>({width:w})); const bd={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+  const stl=(row,font,fill)=>row.eachCell({includeEmpty:true},c=>{ c.font=font||{name:'Calibri',size:8,bold:true}; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; c.border=bd; if(fill)c.fill=fill; });
   ws.mergeCells(1,1,1,HEADERS.length); const t=ws.getCell(1,1);
   t.value=`MEF & MSB Duty Roster for ${roster.monthName} ${roster.year}. P.O.C for NO SHOWS is the HQ Co 1stLt Joseph, James`;
   t.font={name:'Calibri',size:11,bold:true}; t.alignment={horizontal:'center',vertical:'middle',wrapText:true}; t.border=bd; ws.getRow(1).height=30;
-  const hr=ws.getRow(2); HEADERS.forEach((h,i)=>hr.getCell(i+1).value=h); st(hr,{name:'Calibri',size:10,bold:true});
+  const hr=ws.getRow(2); HEADERS.forEach((h,i)=>hr.getCell(i+1).value=h); stl(hr,{name:'Calibri',size:10,bold:true});
   const yel={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFF00'}},amb={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFC000'}},blk={type:'pattern',pattern:'solid',fgColor:{argb:'FF000000'}};
-  let r=3;
-  for(const d of roster.days){ const row=ws.getRow(r);
-    row.getCell(1).value=d.date; row.getCell(2).value=d.day;
-    row.getCell(3).value=(d.ood&&d.ood.name)||''; row.getCell(4).value=(d.ood&&d.ood.section)||''; row.getCell(5).value=(d.ood&&d.ood.phone)||'';
-    row.getCell(6).value=(d.aood&&d.aood.name)||''; row.getCell(7).value=(d.aood&&d.aood.section)||''; row.getCell(8).value=(d.aood&&d.aood.phone)||'';
-    row.getCell(9).value=d.holiday||''; st(row,null,d.isHoliday?amb:d.isWeekend?yel:null); r++; }
+  let r=3; for(const d of roster.days){ const row=ws.getRow(r); row.getCell(1).value=d.date; row.getCell(2).value=d.day;
+    row.getCell(4).value=(d.ood&&d.ood.section)||''; row.getCell(7).value=(d.aood&&d.aood.section)||''; row.getCell(9).value=d.holiday||'';
+    stl(row,null,d.isHoliday?amb:d.isWeekend?yel:null); r++; }
   const sf={name:'Calibri',size:8,bold:true,color:{argb:'FFFFFFFF'}};
-  for(const s of roster.supernumerary||[]){ const row=ws.getRow(r); row.getCell(1).value=s.element; row.getCell(2).value='SUPERNUMERARY';
-    row.getCell(4).value=s.section||''; st(row,sf,blk); r++; }
-  const tr=ws.getRow(r); tr.getCell(1).value='TOTAL'; tr.getCell(2).value=`${roster.days.length} days`; st(tr);
-  const buf=await wb.xlsx.writeBuffer();
-  download(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`${roster.monthName}_${roster.year}_OOD_AOOD_Duty_Roster.xlsx`);
-  toast('Excel file downloaded.');
-}
+  for(const s of roster.supernumerary||[]){ const row=ws.getRow(r); row.getCell(1).value=s.element; row.getCell(2).value='SUPERNUMERARY'; stl(row,sf,blk); r++; }
+  const tr=ws.getRow(r); tr.getCell(1).value='TOTAL'; tr.getCell(2).value=`${roster.days.length} days`; stl(tr);
+  const buf=await wb.xlsx.writeBuffer(); download(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`${roster.monthName}_${roster.year}_OOD_AOOD_Duty_Roster.xlsx`); toast('Excel file downloaded.'); }
 function exportCsv(roster){ const q=v=>{ v=v==null?'':String(v); return /[",]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
-  let rows=[HEADERS.join(',')];
-  for(const d of roster.days) rows.push([d.date,d.day,'',d.ood&&d.ood.section,'','',d.aood&&d.aood.section,'',q(d.holiday)].join(','));
+  let rows=[HEADERS.join(',')]; for(const d of roster.days) rows.push([d.date,d.day,'',d.ood&&d.ood.section,'','',d.aood&&d.aood.section,'',q(d.holiday)].join(','));
   for(const s of roster.supernumerary||[]) rows.push([s.element,'SUPERNUMERARY','','','','','','',''].join(','));
   download(new Blob([rows.join('\n')],{type:'text/csv'}),`${roster.monthName}_${roster.year}_OOD_AOOD_Duty_Roster.csv`); toast('CSV downloaded.'); }
 
-/* ---- PARSE UPLOADED ROSTER (.xlsx) for history ----------------------------- */
+/* ---- PARSE PRIOR ROSTER (.xlsx) for history -------------------------------- */
 function normalizeSection(s){ if(!s) return ''; const u=String(s).trim().toUpperCase(); return ({'COMMSTRAT':'CMST','CMST/COMMSTRAT':'CMST'})[u]||u; }
-function monthYearFromName(name){ const l=name.toLowerCase(); let month=null; MONTH_NAMES.forEach((m,i)=>{ if(l.includes(m.toLowerCase())) month=i+1; });
-  const y=l.match(/(20\d{2})/); return {month,year:y?Number(y[1]):null}; }
-function cellText(c){ if(!c) return ''; const v=c.value; if(v==null) return ''; if(typeof v==='object'){ if(v.text) return String(v.text).trim();
-  if(v.result!=null) return String(v.result).trim(); if(v.richText) return v.richText.map(t=>t.text).join('').trim(); return ''; } return String(v).trim(); }
-async function parseRosterFile(file){ if(typeof ExcelJS==='undefined') throw new Error('Excel reader unavailable on this network.');
+function monthYearFromName(name){ const l=name.toLowerCase(); let month=null; MONTH_NAMES.forEach((m,i)=>{ if(l.includes(m.toLowerCase())) month=i+1; }); const y=l.match(/(20\d{2})/); return {month,year:y?Number(y[1]):null}; }
+function cellText(c){ if(!c) return ''; const v=c.value; if(v==null) return ''; if(typeof v==='object'){ if(v.text) return String(v.text).trim(); if(v.result!=null) return String(v.result).trim(); if(v.richText) return v.richText.map(t=>t.text).join('').trim(); return ''; } return String(v).trim(); }
+async function parseRosterFile(file){ if(typeof ExcelJS==='undefined') throw new Error('Excel reader unavailable.');
   const buf=await file.arrayBuffer(), wb=new ExcelJS.Workbook(); await wb.xlsx.load(buf); const ws=wb.worksheets[0]; let hr=2;
   ws.eachRow((row,n)=>{ const vals=row.values.map(c=>String(c||'').toUpperCase()); if(vals.some(v=>v.includes('DATE'))&&vals.some(v=>v.includes('OOD'))&&hr===2) hr=n; });
   const col={}; ws.getRow(hr).eachCell((c,i)=>{ const tt=cellText(c).toUpperCase().replace(/\s+/g,'');
     if(tt==='DATE')col.date=i; else if(tt==='DAY')col.day=i; else if(tt.includes('HOLIDAY'))col.holiday=i;
-    else if(tt.includes('AOOD#'))col.aoodPhone=i; else if(tt.includes('OOD#'))col.oodPhone=i;
     else if(tt==='AOOD'&&col.aood==null)col.aood=i; else if(tt==='OOD'&&col.ood==null)col.ood=i;
     else if(tt==='SECTION'){ if(col.oodSection==null)col.oodSection=i; else col.aoodSection=i; } });
   const at=(row,c)=>c?cellText(row.getCell(c)):''; const {month,year}=monthYearFromName(file.name); const days=[];
@@ -313,53 +330,68 @@ async function parseRosterFile(file){ if(typeof ExcelJS==='undefined') throw new
   return {month,year,label:(month&&year)?`${MONTH_NAMES[month-1]} ${year}`:file.name,days}; }
 
 /* ---- STATE / PERSISTENCE --------------------------------------------------- */
-const LS_KEY='imsb_section_allocator_v1';
-let state={ eligible:null, history:null, target:{year:2026,month:6,mefCeStart:16,includeG5:false}, roster:null, fairness:null, tab:'generate' };
-function loadState(){ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const s=JSON.parse(raw); state.eligible=s.eligible; state.history=s.history; if(s.target) state.target={...state.target,...s.target}; } }catch(e){}
-  if(!state.eligible) state.eligible={...DEFAULT_ELIGIBLE}; if(!state.history) state.history=JSON.parse(JSON.stringify(SEED_HISTORY)); }
-function persist(){ try{ localStorage.setItem(LS_KEY,JSON.stringify({eligible:state.eligible,history:state.history,target:state.target})); }catch(e){} }
-function saveDataFile(){ const data={app:'imsb-section-allocator',version:2,exported:new Date().toISOString(),eligible:state.eligible,history:state.history,target:state.target};
+const LS_KEY='imsb_section_allocator_v3';
+let state={ elig:null, history:null, screen:null, target:{year:2026,month:6,mefCeStart:16,includeSSEC:false}, roster:null, fairness:null, tab:'generate' };
+function loadState(){ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const s=JSON.parse(raw); state.elig=s.elig; state.history=s.history; if(s.target) state.target={...state.target,...s.target}; } }catch(e){}
+  if(!state.elig||!state.elig.HQ||typeof state.elig.HQ!=='object') state.elig=JSON.parse(JSON.stringify(DEFAULT_ELIG));
+  if(!state.history) state.history=JSON.parse(JSON.stringify(SEED_HISTORY)); }
+function persist(){ try{ localStorage.setItem(LS_KEY,JSON.stringify({elig:state.elig,history:state.history,target:state.target})); }catch(e){} }
+function saveDataFile(){ const data={app:'imsb-section-allocator',version:3,exported:new Date().toISOString(),elig:state.elig,history:state.history,target:state.target};
   download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),'duty_allocation_data.json'); toast('Data saved — keep this file to move between computers.'); }
 function loadDataFile(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader();
-  rd.onload=e=>{ try{ const d=JSON.parse(e.target.result); if(d.eligible) state.eligible=d.eligible; if(d.history) state.history=d.history; if(d.target) state.target={...state.target,...d.target};
+  rd.onload=e=>{ try{ const d=JSON.parse(e.target.result); if(d.elig) state.elig=d.elig; if(d.history) state.history=d.history; if(d.target) state.target={...state.target,...d.target};
     persist(); render(); toast('Data loaded.'); }catch(err){ toast('Could not read that file.'); } }; rd.readAsText(f); input.value=''; }
 
 /* ---- HELPERS --------------------------------------------------------------- */
 function download(blob,name){ const url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none',4000); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none',4500); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function getElig(s,r){ return (state.elig[s]&&state.elig[s][r])||0; }
+function setElig(s,r,v){ state.elig[s]=state.elig[s]||{ood:0,aood:0}; state.elig[s][r]=Math.max(0,parseInt(v,10)||0); persist(); }
 
 /* ---- NAV ------------------------------------------------------------------- */
 const TABS=[['generate','Allocate'],['history','History & Fairness'],['about','Help']];
 function renderNav(){ document.getElementById('nav').innerHTML=TABS.map(([id,l])=>`<button class="${state.tab===id?'active':''}" onclick="go('${id}')">${l}</button>`).join(''); }
 function go(t){ state.tab=t; render(); }
 
-/* ---- GENERATE/ALLOCATE TAB ------------------------------------------------- */
-function renderGenerate(){
-  const t=state.target, e=state.eligible;
-  const mefList=MEF_SECTIONS.concat(t.includeG5?['G5']:[]);
-  const countInput=(k,label)=>`<div class="countbox"><label>${label}</label><input type="number" min="0" id="el_${k}" value="${e[k]||0}" onchange="setElig('${k}',this.value)"></div>`;
+/* ---- ALLOCATE TAB ---------------------------------------------------------- */
+function renderGenerate(){ const t=state.target;
+  const mefList=MEF_SECTIONS.concat(t.includeSSEC?['SSEC']:[]);
+  const oodIn=s=>`<div class="countbox"><label>${s} · OOD</label><input type="number" min="0" value="${getElig(s,'ood')}" onchange="setElig('${s}','ood',this.value)"></div>`;
+  const aoodIn=s=>`<div class="countbox"><label>${s} · AOOD</label><input type="number" min="0" value="${getElig(s,'aood')}" onchange="setElig('${s}','aood',this.value)"></div>`;
+
+  let scr=''; if(state.screen){ const rs=Object.entries(state.screen.reasons||{}).map(([k,v])=>`${esc(k)}: ${v}`).join(' · ');
+    scr=`<div class="sub small"><b>Manpower screened:</b> ${state.screen.included} eligible from <i>${esc(state.screen.file)}</i>.
+      ${rs?`<br><span class="muted">Excluded — ${rs}.</span>`:''}
+      <button class="btn btn-ghost small" style="padding:2px 8px;margin-left:8px;" onclick="showExcluded()">View excluded</button></div>`; }
 
   let html=`<div class="card">
-    <div class="flex-between"><h2>Monthly Duty Section Allocation</h2><span class="small muted">Apportioned by on-hand eligible strength (Bn Duty Order)</span></div>
-    <div class="row" style="margin-bottom:8px;">
-      <div><label class="lbl">Month</label><select id="selMonth">${MONTH_NAMES.map((m,i)=>`<option value="${i+1}" ${t.month===i+1?'selected':''}>${m}</option>`).join('')}</select></div>
-      <div><label class="lbl">Year</label><select id="selYear">${[2025,2026,2027].map(y=>`<option ${t.year===y?'selected':''}>${y}</option>`).join('')}</select></div>
-      <div><label class="lbl">MEF CE Window Start</label><select id="selStart">${[14,15,16,17].map(d=>`<option value="${d}" ${t.mefCeStart===d?'selected':''}>Day ${d}</option>`).join('')}</select></div>
-      <div><label class="lbl">&nbsp;</label><label class="small" style="display:flex;gap:6px;align-items:center;padding:8px 0;"><input type="checkbox" id="chkG5" ${t.includeG5?'checked':''} onchange="setG5(this.checked)"/> Include G5/SSEC</label></div>
+    <div class="flex-between"><h2>Monthly Duty Section Allocation</h2><span class="small muted">Apportioned by on-hand eligible strength (OOD &amp; AOOD counted separately)</span></div>
+    <div class="row">
+      <div><label class="lbl" style="margin:0 0 6px;">Month</label><select id="selMonth">${MONTH_NAMES.map((m,i)=>`<option value="${i+1}" ${t.month===i+1?'selected':''}>${m}</option>`).join('')}</select></div>
+      <div><label class="lbl" style="margin:0 0 6px;">Year</label><select id="selYear">${[2025,2026,2027].map(y=>`<option ${t.year===y?'selected':''}>${y}</option>`).join('')}</select></div>
+      <div><label class="lbl" style="margin:0 0 6px;">MEF CE Window Start</label><select id="selStart">${[14,15,16,17].map(d=>`<option value="${d}" ${t.mefCeStart===d?'selected':''}>Day ${d}</option>`).join('')}</select></div>
+      <div><label class="lbl" style="margin:0 0 6px;">&nbsp;</label><label class="small" style="display:flex;gap:6px;align-items:center;padding:8px 0;"><input type="checkbox" id="chkSSEC" ${t.includeSSEC?'checked':''} onchange="setSSEC(this.checked)"/> Include SSEC</label></div>
     </div>
 
-    <label class="lbl">MSB — Eligible On-Hand Watch Standers</label>
-    <div class="countgrid" style="margin-bottom:12px;">${countInput('HQ','HQ')}${countInput('CSSC','CSSC')}</div>
-
-    <label class="lbl">MEF CE — Eligible On-Hand Watch Standers (by section)</label>
-    <div class="countgrid">${mefList.map(s=>countInput(s,s)).join('')}</div>
+    <div class="sub" style="margin-top:14px;">
+      <div class="flex-between"><b>Eligible watch standers</b>
+        <div class="row no-print">
+          <button class="btn btn-ghost" onclick="document.getElementById('manFile').click()">⬆ Upload Manpower Roster (.xlsx/.csv)</button>
+          <input type="file" id="manFile" accept=".xlsx,.csv" class="hide" onchange="uploadManpower(this)">
+        </div></div>
+      <div class="small muted" style="margin:4px 0 10px;">Upload to auto-screen by rank, unit code, duty status &amp; end-date — or just type the numbers. OOD = SSgt+/officers/warrants; AOOD = Cpl/Sgt (HQ/CSSC only).</div>
+      ${scr}
+      <label class="lbl">MSB — HQ &amp; CSSC</label>
+      <div class="countgrid">${oodIn('HQ')}${aoodIn('HQ')}${oodIn('CSSC')}${aoodIn('CSSC')}</div>
+      <label class="lbl">MEF CE — OOD by section</label>
+      <div class="countgrid">${mefList.map(oodIn).join('')}</div>
+    </div>
 
     <div class="row" style="margin-top:14px;">
       <button class="btn btn-primary" onclick="doAllocate()">Generate Allocation</button>
-      <span class="small muted">MSB owns days 1–${t.mefCeStart-1} (+31st on long months) · MEF CE owns ${t.mefCeStart}–30</span>
-    </div>
-  </div>`;
+      <span class="small muted">MSB owns days 1–${t.mefCeStart-1} (+31 on long months) · MEF CE owns ${t.mefCeStart}–30 · AOOD = HQ/CSSC all month</span>
+    </div></div>`;
 
   if(state.roster){ html+=renderQuotaCard()+renderRosterBlock(); }
   document.getElementById('tab-generate').innerHTML=html;
@@ -367,36 +399,30 @@ function renderGenerate(){
   document.getElementById('selYear').onchange=ev=>{ state.target.year=+ev.target.value; persist(); render(); };
   document.getElementById('selStart').onchange=ev=>{ state.target.mefCeStart=+ev.target.value; persist(); render(); };
 }
-function setElig(k,v){ state.eligible[k]=Math.max(0,parseInt(v,10)||0); persist(); }
-function setG5(on){ state.target.includeG5=on; persist(); render(); }
+function setSSEC(on){ state.target.includeSSEC=on; persist(); render(); }
+function showExcluded(){ if(!state.screen||!state.screen.excluded) return; const lines=state.screen.excluded.map(x=>`${x.name} — ${x.reason}`).join('\n');
+  alert('Excluded from eligible counts:\n\n'+(lines||'(none)')); }
 function doAllocate(){ const t=state.target, cal=buildCalendar(t.year,t.month,t.mefCeStart), burden=summarize(state.history);
-  state.roster=allocateRoster(cal,state.eligible,{mefCeStart:t.mefCeStart,includeG5:t.includeG5},burden);
+  state.roster=allocateRoster(cal,state.elig,{mefCeStart:t.mefCeStart,includeSSEC:t.includeSSEC},burden);
   state.fairness=gradeRoster(state.roster,burden); render(); toast('Allocation generated. Review, adjust, and export below.'); }
 
-function renderQuotaCard(){
-  const q=state.roster.quota;
-  const pct=(n,sum)=>sum>0?Math.round(n/sum*100):0;
-  const msbSum=(q.msbW.HQ||0)+(q.msbW.CSSC||0);
-  const mefSum=q.mefSecs.reduce((a,s)=>a+(q.mefW[s]||0),0);
-  const msbRows=['HQ','CSSC'].map(s=>`<tr><td><b>${s}</b></td><td style="text-align:center;">${q.msbW[s]||0}</td>
-    <td style="text-align:center;" class="pct">${pct(q.msbW[s]||0,msbSum)}%</td><td style="text-align:center;"><b>${q.msbQuota[s]||0}</b></td></tr>`).join('');
-  const mefRows=q.mefSecs.map(s=>`<tr><td><b>${s}</b></td><td style="text-align:center;">${q.mefW[s]||0}</td>
-    <td style="text-align:center;" class="pct">${pct(q.mefW[s]||0,mefSum)}%</td><td style="text-align:center;"><b>${q.mefQuota[s]||0}</b></td></tr>`).join('');
+function renderQuotaCard(){ const q=state.roster.quota; const pct=(n,sum)=>sum>0?Math.round(n/sum*100):0;
+  const msbSum=(q.msbOodW.HQ||0)+(q.msbOodW.CSSC||0), mefSum=q.mefSecs.reduce((a,s)=>a+(q.mefOodW[s]||0),0), aoodSum=(q.aoodW.HQ||0)+(q.aoodW.CSSC||0);
+  const tr=(s,w,sum,quota)=>`<tr><td><b>${s}</b></td><td style="text-align:center;">${w||0}</td><td style="text-align:center;" class="pct">${pct(w||0,sum)}%</td><td style="text-align:center;"><b>${quota||0}</b></td></tr>`;
+  const msbRows=['HQ','CSSC'].map(s=>tr(s,q.msbOodW[s],msbSum,q.msbOodQ[s])).join('');
+  const mefRows=q.mefSecs.map(s=>tr(s,q.mefOodW[s],mefSum,q.mefOodQ[s])).join('');
+  const aoodRows=['HQ','CSSC'].map(s=>tr(s,q.aoodW[s],aoodSum,q.aoodQ[s])).join('');
   return `<div class="card"><h2>Apportionment (proportional to eligible strength)</h2>
-    <div class="grid" style="grid-template-columns:1fr 1fr;">
-      <div><h3>MSB — ${q.msbDays} duty days</h3>
-        <table><thead><tr><th>Section</th><th>Eligible</th><th>Share</th><th>Days</th></tr></thead><tbody>${msbRows}</tbody></table></div>
-      <div><h3>MEF CE — ${q.mefDays} duty days</h3>
-        <table><thead><tr><th>Section</th><th>Eligible</th><th>Share</th><th>Days</th></tr></thead><tbody>${mefRows}</tbody></table>
-        <div class="small muted" style="margin-top:6px;">Sections with 0 eligible are skipped (rotate small shops month to month).</div></div>
-    </div></div>`;
-}
-function renderRosterBlock(){
-  const f=state.fairness, r=state.roster, gc='g'+f.grade, bc=f.score>=80?'#22c55e':f.score>=60?'#eab308':'#ef4444';
-  const flags=f.flags.length?f.flags.map(x=>`<li>${x.level==='red'?'🔴':'🟡'} ${esc(x.msg)}</li>`).join(''):'<li style="color:#4ade80;">✅ No fairness violations — weekends/holidays clear of last month.</li>';
+    <div class="grid" style="grid-template-columns:1fr 1fr 1fr;">
+      <div><h3>OOD · MSB — ${q.msbDays} days</h3><table><thead><tr><th>Sec</th><th>Elig</th><th>Share</th><th>Days</th></tr></thead><tbody>${msbRows}</tbody></table></div>
+      <div><h3>OOD · MEF CE — ${q.mefDays} days</h3><table><thead><tr><th>Sec</th><th>Elig</th><th>Share</th><th>Days</th></tr></thead><tbody>${mefRows}</tbody></table></div>
+      <div><h3>AOOD · all ${q.total} days</h3><table><thead><tr><th>Sec</th><th>Elig</th><th>Share</th><th>Days</th></tr></thead><tbody>${aoodRows}</tbody></table>
+        <div class="small muted" style="margin-top:6px;">AOOD sourced from HQ/CSSC only.</div></div>
+    </div></div>`; }
+function renderRosterBlock(){ const f=state.fairness, r=state.roster, gc='g'+f.grade, bc=f.score>=80?'#22c55e':f.score>=60?'#eab308':'#ef4444';
+  const flags=f.flags.length?f.flags.map(x=>`<li>${x.level==='red'?'🔴':'🟡'} ${esc(x.msg)}</li>`).join(''):'<li style="color:#4ade80;">✅ No weekend/holiday repeats from last month.</li>';
   const msbOpt=v=>`<option value="">—</option>`+['HQ','CSSC'].map(s=>`<option ${v===s?'selected':''}>${s}</option>`).join('');
-  const allSecs=['HQ','CSSC'].concat(MEF_SECTIONS,state.target.includeG5?['G5']:[]);
-  const oodOpt=v=>`<option value="">—</option>`+allSecs.map(s=>`<option ${v===s?'selected':''}>${s}</option>`).join('');
+  const allSecs=allSections(); const oodOpt=v=>`<option value="">—</option>`+allSecs.map(s=>`<option ${v===s?'selected':''}>${s}</option>`).join('');
   const rows=r.days.map(d=>{ const cls=d.isHoliday?'row-holiday':d.isWeekend?'row-weekend':'';
     return `<tr class="${cls}"><td><b>${d.date}</b></td><td>${d.day}</td>
       <td><select class="cellsel" onchange="swapSec(${d.date},'ood',this.value)">${oodOpt(d.ood.section)}</select></td>
@@ -408,29 +434,24 @@ function renderRosterBlock(){
         <button class="btn btn-primary" onclick="exportXlsx(state.roster)">⬇ Export Excel</button>
         <button class="btn btn-ghost" onclick="exportCsv(state.roster)">CSV</button>
         <button class="btn btn-ghost" onclick="saveToHistory()">Save to History</button>
-        <button class="btn btn-ghost" onclick="window.print()">Print</button>
-      </div></div>
+        <button class="btn btn-ghost" onclick="window.print()">Print</button></div></div>
     <div class="grid grid-2">
       <div><div class="card" style="margin:0 0 12px;">
         <div class="flex-between"><h3>Weekend / Holiday Fairness</h3><div class="grade ${gc}">${f.grade} <span class="muted" style="font-size:16px;">(${f.score})</span></div></div>
         <div class="bar2"><div style="width:${f.score}%;background:${bc};"></div></div>
         <ul class="small" style="margin:6px 0 0;padding-left:16px;">${flags}</ul></div>
-        <div class="small muted">Names are intentionally blank — each section fills its own watch standers. Click a SECTION cell to override. Yellow = weekend, amber = holiday.</div>
-      </div>
-      <div style="overflow-x:auto;"><table><thead><tr><th>DATE</th><th>DAY</th><th>OOD SECTION</th><th>AOOD SECTION</th><th>HOLIDAY</th></tr></thead>
-        <tbody>${rows}${supers}</tbody></table></div>
-    </div></div>`;
-}
+        <div class="small muted">Names are intentionally blank — each section fills its own watch standers. Click a SECTION cell to override. Yellow = weekend, amber = holiday.</div></div>
+      <div style="overflow-x:auto;"><table><thead><tr><th>DATE</th><th>DAY</th><th>OOD SECTION</th><th>AOOD SECTION</th><th>HOLIDAY</th></tr></thead><tbody>${rows}${supers}</tbody></table></div>
+    </div></div>`; }
 function swapSec(date,role,val){ const d=state.roster.days.find(x=>x.date===date); if(!d) return; d[role]={name:'',section:val,phone:''};
   state.fairness=gradeRoster(state.roster,summarize(state.history)); render(); }
 function saveToHistory(){ const r=state.roster, summary={month:r.month,year:r.year,label:r.label,mefCeStart:r.mefCeStart,
     days:r.days.map(d=>({date:d.date,day:d.day,oodSection:d.ood.section||'',aoodSection:d.aood.section||'',holiday:d.holiday||'',isWeekend:d.isWeekend}))};
   const i=state.history.findIndex(h=>h.year===r.year&&h.month===r.month); if(i>=0) state.history[i]=summary; else state.history.push(summary);
-  persist(); toast('Saved to history — next month will balance weekends/holidays against this one.'); }
+  persist(); toast('Saved to history — next month balances weekends/holidays against this one.'); }
 
 /* ---- HISTORY TAB ----------------------------------------------------------- */
-function renderHistory(){
-  const burden=summarize(state.history), sections=Object.keys(burden.bySection).sort(), months=burden.months;
+function renderHistory(){ const burden=summarize(state.history), sections=Object.keys(burden.bySection).sort(), months=burden.months;
   const col=st=>{ const sp=(st&&(st.weekend+st.holiday))||0; if(st&&st.holiday) return 'background:rgba(239,68,68,.35);'; if(sp>=2) return 'background:rgba(249,115,22,.35);'; if(sp===1) return 'background:rgba(234,179,8,.3);'; return ''; };
   const bt=months.length?`<div style="overflow-x:auto;"><table><thead><tr><th>Section</th>${months.map(m=>`<th>${m}</th>`).join('')}<th>Σ Wknd</th><th>Σ Hol</th></tr></thead><tbody>`+
     sections.map(sec=>{ const tot=burden.bySection[sec]; return `<tr><td><b>${esc(sec)}</b></td>`+months.map(m=>{ const st=burden.byMonth[m]&&burden.byMonth[m][sec];
@@ -443,11 +464,10 @@ function renderHistory(){
     <div class="card"><h2>Historical Roster Import</h2>
       <div class="small muted" style="margin-bottom:8px;">Upload prior <b>.xlsx</b> rosters (parsed in your browser) so the fairness overlay knows who carried weekends/holidays. Filenames like <i>May_2026_OOD_AOOD_Duty_Roster.xlsx</i> work best.</div>
       <input type="file" id="histFiles" accept=".xlsx" multiple onchange="uploadHistory(this)"/></div>
-    <div class="card"><h2>Weekend / Holiday Burden by Section</h2>${bt}</div>
+    <div class="card"><h2>Weekend / Holiday Burden by OOD Section</h2>${bt}</div>
     <div class="card"><h2>Loaded Months (${state.history.length})</h2>
       <table><thead><tr><th>Month</th><th>Days</th><th></th></tr></thead><tbody>${list}</tbody></table>
-      <div class="row" style="margin-top:10px;"><button class="btn btn-ghost" onclick="resetHistory()">Reset to Seed</button></div></div>`;
-}
+      <div class="row" style="margin-top:10px;"><button class="btn btn-ghost" onclick="resetHistory()">Reset to Seed</button></div></div>`; }
 async function uploadHistory(input){ const files=[...input.files]; if(!files.length) return; let ok=0,bad=[];
   for(const f of files){ try{ const p=await parseRosterFile(f); if(!p.month||!p.year){ bad.push(f.name+' (no month/year in filename)'); continue; }
     const summary={month:p.month,year:p.year,label:p.label,days:p.days}; const i=state.history.findIndex(h=>h.year===p.year&&h.month===p.month);
@@ -457,34 +477,35 @@ function delHistory(y,m){ state.history=state.history.filter(h=>!(h.year===y&&h.
 function resetHistory(){ if(confirm('Reset history to seeded months?')){ state.history=JSON.parse(JSON.stringify(SEED_HISTORY)); persist(); render(); } }
 
 /* ---- HELP TAB -------------------------------------------------------------- */
-function renderAbout(){
-  document.getElementById('tab-about').innerHTML=`
-    <div class="card"><h2>What this tool does</h2>
-      <p>It builds the monthly <b>section allocation</b> — which company/section owns each day's OOD (and AOOD support) — based on <b>on-hand eligible strength</b>, exactly as the signed Bn Duty Order requires. It does <b>not</b> assign individual Marines; each section fills its own watch standers onto the exported sheet.</p>
-      <ol style="line-height:1.7;">
-        <li><b>Allocate tab:</b> enter each section's eligible on-hand count, pick the month, and click <b>Generate Allocation</b>.</li>
-        <li>The <b>Apportionment</b> card shows the proportional math (eligible → share → days).</li>
-        <li>The <b>Section Schedule</b> lays out every date. Click a SECTION cell to override. Export to Excel or print.</li>
-      </ol></div>
-    <div class="card"><h2>The method (per the order)</h2>
-      <ul style="line-height:1.7;">
-        <li><b>On-hand strength</b> = a Marine present for duty at least 5 days that month, eligible by rank, not exempt (no pending legal, can draw a weapon, can access classified, not a disqualifying light-duty chit).</li>
-        <li><b>Structure:</b> MSB owns the 1st–15th (and the 31st on long months); MEF CE owns the 16th–30th.</li>
-        <li><b>Cut 1 — MSB:</b> split MSB days between HQ and CSSC proportional to eligible strength.</li>
-        <li><b>Cut 2 — MEF CE:</b> split MEF CE days across G1–G8 / CMST (and G5/SSEC when present) proportional to each section's eligible strength.</li>
-        <li><b>Rounding:</b> largest-remainder method (defendable, sums exactly to the days available).</li>
-        <li><b>Overlay:</b> weekends/holidays are then steered so no section carries them in back-to-back months when avoidable — without breaking the proportional totals.</li>
-      </ul>
-      <p class="small muted">Policy language: "Monthly duty allocations will be apportioned based on each organization's on-hand strength of eligible duty standers (present for duty ≥5 days that month). I MEF CE allocations are determined as a single pool, then subdivided proportionally among directorates by each section's eligible on-hand strength. Final adjustments may distribute weekends/holidays more equitably, provided allocations remain substantially proportional."</p>
-    </div>
-    <div class="card"><h2>Saving your work</h2>
-      <p>Your eligible counts and history save automatically in this browser. Use <b>💾 Save Data</b> (top bar) to export a <code>duty_allocation_data.json</code> you can carry to another computer and restore with <b>📂 Load Data</b>. Nothing is uploaded anywhere — this file runs entirely on your machine.</p>
-      <div class="small muted">POC: 1stLt Joseph, James L. — HQ Co XO / S-6, I MSB.</div></div>`;
-}
+function renderAbout(){ document.getElementById('tab-about').innerHTML=`
+  <div class="card"><h2>What this tool does</h2>
+    <p>Builds the monthly <b>section allocation</b> — which company/section owns each day's OOD and AOOD — based on <b>on-hand eligible strength</b>, counting OOD and AOOD pools separately. It does <b>not</b> assign individual Marines; each section fills its own watch standers on the exported sheet.</p>
+    <ol style="line-height:1.7;">
+      <li><b>Upload a manpower roster</b> (.xlsx/.csv) to auto-screen &amp; count, or type the counts.</li>
+      <li>Pick the month and click <b>Generate Allocation</b>. The Apportionment card shows the proportional math.</li>
+      <li>Adjust any SECTION cell, then Export to Excel or Print.</li>
+    </ol></div>
+  <div class="card"><h2>Eligibility &amp; screening</h2>
+    <ul style="line-height:1.7;">
+      <li><b>OOD ranks:</b> SSgt, GySgt, 2ndLt, 1stLt, Capt, WO1, CWO2–CWO5. (Pay grades E6–E7, O1–O3, W1–W5.)</li>
+      <li><b>AOOD ranks:</b> Cpl, Sgt (E4–E5) — sourced from HQ/CSSC only.</li>
+      <li><b>Present for duty:</b> a Marine is excluded if their duty status shows an absence (leave, TAD, deployment, school, legal, medical, limited/light duty, etc.).</li>
+      <li><b>End-date rule:</b> anyone whose status/absence <b>end date runs past the end of the target month</b> is not counted that month.</li>
+      <li><b>Unit → section:</b> 20141-H → HQ, 20141-S → CSSC, 20371-1…8 → G1…G8, CMST and SSEC as listed.</li>
+    </ul>
+    <p class="small muted">The parser is tolerant of column-header wording (Rank/Grade, Unit/RUC/MCC, Status/Duty, End/Return/RTD, Name). After upload, verify the counts and override any cell — then allocate.</p></div>
+  <div class="card"><h2>Allocation method (per the Bn Duty Order)</h2>
+    <ul style="line-height:1.7;">
+      <li>MSB owns days 1–15 (and the 31st on long months); MEF CE owns 16–30.</li>
+      <li><b>OOD:</b> MSB days split HQ/CSSC by OOD-eligible strength; MEF days split across directorates by OOD-eligible strength.</li>
+      <li><b>AOOD:</b> whole month split between HQ and CSSC by AOOD-eligible strength.</li>
+      <li>Largest-remainder rounding (sums exactly to days available).</li>
+      <li>Weekend/holiday fairness overlaid afterward so no section repeats special duty month-to-month when avoidable.</li>
+    </ul>
+    <div class="small muted">POC: 1stLt Joseph, James L. — HQ Co XO / S-6, I MSB.</div></div>`; }
 
 /* ---- MAIN ------------------------------------------------------------------ */
-function render(){ renderNav();
-  for(const [id] of TABS) document.getElementById('tab-'+id).classList.add('hide');
+function render(){ renderNav(); for(const [id] of TABS) document.getElementById('tab-'+id).classList.add('hide');
   document.getElementById('tab-'+state.tab).classList.remove('hide');
   if(state.tab==='generate') renderGenerate(); else if(state.tab==='history') renderHistory(); else renderAbout(); }
 loadState(); render();
