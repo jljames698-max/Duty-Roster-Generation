@@ -227,11 +227,11 @@ function allocateRoster(cal,elig,cfg,burden){ const mefCeStart=cfg.mefCeStart; c
 function classifyRank(raw){ if(!raw) return null; const s=String(raw).toUpperCase().replace(/[.\s_]/g,'');
   const pg=s.match(/^([EOW])-?(\d)/); if(pg){ const t=pg[1], n=+pg[2];
     if(t==='E'){ if(n===4||n===5) return 'AOOD'; if(n===6||n===7) return 'OOD'; return null; }
-    if(t==='O'){ return (n>=1&&n<=3)?'OOD':null; } if(t==='W'){ return (n>=1&&n<=5)?'OOD':null; } }
+    if(t==='O'){ return (n>=1&&n<=3)?'OOD':null; } if(t==='W'){ return (n>=1&&n<=3)?'OOD':null; } } // W1-W3 only (no CWO4/CWO5)
   if(/CAPT|CAPTAIN/.test(s)) return 'OOD';
   if(/1STLT|1LT|FIRSTLIEUT/.test(s)) return 'OOD';
   if(/2NDLT|2LT|SECONDLIEUT/.test(s)) return 'OOD';
-  if(/CWO|WARRANT|^WO\d?$|^W\d$/.test(s)) return 'OOD';
+  if(/CWO|WARRANT|^WO\d?$|^W\d$/.test(s)){ const num=(s.match(/[0-9]/)||[])[0]; if(num&&+num>=4) return null; return 'OOD'; } // WO1/CWO2/CWO3 only
   if(/GYSGT|GUNNERY/.test(s)) return 'OOD';
   if(/SSGT|STAFFSGT|STAFFSERG/.test(s)) return 'OOD';
   if(/MGYSGT|MASTERGUNNERY|SGTMAJ|SERGEANTMAJ|1STSGT|FIRSTSGT|MSGT|MASTERSGT/.test(s)) return null; // senior SNCOs not eligible
@@ -248,9 +248,9 @@ function mapUnit(raw){ if(!raw) return null; const s=String(raw).toUpperCase().r
   if(s.includes('HEADQUART')) return 'HQ'; if(s.includes('COMBATSERVICE')) return 'CSSC';
   return null; }
 function statusPresent(raw){ if(!raw) return true; const s=String(raw).toLowerCase();
-  if(/leave|tad|tdy|deploy|ua\b|awol|legal|conf|brig|medical|hospital|wounded|wia|school|pcs|pca|maternit|convales|annual|terminal|appt|nmps/.test(s)) return false;
+  if(/leave|tad|tdy|deploy|ua\b|awol|legal|conf|brig|medical|hospital|wounded|wia|school|pcs|pca|transient|maternit|convales|annual|terminal|appt|nmps|fap/.test(s)) return false;
   if(/limited|light/.test(s)) return false; return true; }
-function toDate(v){ if(v==null||v==='') return null; if(v instanceof Date) return isNaN(v)?null:v; const d=new Date(v); return isNaN(d)?null:d; }
+function toDate(v){ if(v==null) return null; if(v instanceof Date) return isNaN(v)?null:v; const s=String(v).replace(/[\t\s]+/g,' ').trim(); if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; }
 function splitCsvLine(l){ const out=[]; let cur='',q=false; for(let i=0;i<l.length;i++){ const ch=l[i];
   if(q){ if(ch==='"'){ if(l[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
   else { if(ch===','){ out.push(cur); cur=''; } else if(ch==='"') q=true; else cur+=ch; } } out.push(cur); return out; }
@@ -265,28 +265,35 @@ async function readManpowerRows(file){ const name=file.name.toLowerCase();
   return {headers:all[hi].map(v=>String(v==null?'':(v.text||v.result||v)).trim()), rows:all.slice(hi+1)}; }
 function findCol(headers,re){ return headers.findIndex(h=>re.test(String(h).toLowerCase())); }
 async function parseManpower(file){ const {headers,rows}=await readManpowerRows(file);
-  const ci={ rank:findCol(headers,/rank|grade|^pay/), unit:findCol(headers,/unit|ruc|mcc|uic|section|cmd/),
-    status:findCol(headers,/status|duty/), end:findCol(headers,/end|return|rtd|thru|depart|to ?date|date ?back|proj/), name:findCol(headers,/name/) };
+  const ci={ rank:findCol(headers,/rank|grade|^pay/), unit:findCol(headers,/unit|ruc|mcc|uic|cmd/),
+    category:findCol(headers,/category/), status:findCol(headers,/duty ?status|^status$|status/),
+    end:findCol(headers,/end ?date|return|rtd|thru|date ?back/), name:findCol(headers,/name/) };
   if(ci.rank<0||ci.unit<0) throw new Error('Could not find Rank and Unit columns. Check the file headers, or type counts manually.');
-  const counts={}; allSections().forEach(s=>counts[s]={ood:0,aood:0});
+  const counts={}; allSections().forEach(s=>counts[s]={ood:0,aood:0}); const seen=new Set();
   const monthEnd=new Date(state.target.year,state.target.month,0);
+  const cutoff=new Date(state.target.year,state.target.month-1,monthEnd.getDate()-4); // returns with >=5 days left
   const txt=v=> v==null?'':String(v.text||v.result||v).trim();
   let included=0; const reasons={}; const excluded=[];
-  const note=(name,reason)=>{ reasons[reason]=(reasons[reason]||0)+1; if(excluded.length<80) excluded.push({name,reason}); };
+  const note=(name,reason)=>{ reasons[reason]=(reasons[reason]||0)+1; if(excluded.length<120) excluded.push({name,reason}); };
   for(const r of rows){ const rankS=txt(r[ci.rank]); if(!rankS) continue;
     const nm=ci.name>=0?txt(r[ci.name]):rankS;
     const role=classifyRank(rankS); if(!role){ note(nm,'rank not OOD/AOOD'); continue; }
     const section=mapUnit(txt(r[ci.unit])); if(!section){ note(nm,'unit not mapped'); continue; }
-    const end=ci.end>=0?toDate(r[ci.end]):null; const statusS=ci.status>=0?txt(r[ci.status]):'';
-    if(end&&end>monthEnd){ note(nm,'absent past end of month'); continue; }
-    if(!statusPresent(statusS)&&!end){ note(nm,'not present for duty'); continue; }
-    if(!counts[section]) counts[section]={ood:0,aood:0}; counts[section][role]++; included++; }
-  return {counts,included,reasons,excluded,headers}; }
+    seen.add(section);
+    const cat=ci.category>=0?txt(r[ci.category]):''; const statusS=ci.status>=0?txt(r[ci.status]):''; const end=ci.end>=0?toDate(r[ci.end]):null;
+    const onHand = cat ? /on.?hand/i.test(cat) : statusPresent(statusS);
+    let present;
+    if(onHand){ present=true; } // present for duty at the unit this month
+    else { present = !!(end && end<=cutoff); } // absent: counts only if back with >=5 days left
+    if(!present){ note(nm, (end&&end>monthEnd)?'absent past end of month':'not present for duty'); continue; }
+    if(!counts[section]) counts[section]={ood:0,aood:0}; counts[section][role.toLowerCase()]++; included++; }
+  return {counts,included,reasons,excluded,seen:[...seen],headers}; }
 async function uploadManpower(input){ const f=input.files[0]; if(!f) return;
   try{ const res=await parseManpower(f);
-    if(res.counts.SSEC&&res.counts.SSEC.ood>0) state.target.includeSSEC=true;
-    state.elig=res.counts; state.screen={file:f.name,included:res.included,reasons:res.reasons,excluded:res.excluded,when:new Date().toISOString()};
-    persist(); render(); toast(`Screened ${res.included} eligible watch standers from ${f.name}. Review counts below.`);
+    res.seen.forEach(sec=>{ state.elig[sec]=res.counts[sec]||{ood:0,aood:0}; }); // merge: only update sections present in this file
+    if(res.seen.includes('SSEC')) state.target.includeSSEC=true;
+    state.screen={file:f.name,included:res.included,reasons:res.reasons,excluded:res.excluded,sections:res.seen,when:new Date().toISOString()};
+    persist(); render(); toast(`Screened ${res.included} eligible from ${f.name} (${res.seen.join(', ')}). Review counts below.`);
   }catch(e){ toast('Manpower parse failed: '+e.message); } input.value=''; }
 
 /* ---- EXCEL / CSV EXPORT ---------------------------------------------------- */
@@ -487,13 +494,13 @@ function renderAbout(){ document.getElementById('tab-about').innerHTML=`
     </ol></div>
   <div class="card"><h2>Eligibility &amp; screening</h2>
     <ul style="line-height:1.7;">
-      <li><b>OOD ranks:</b> SSgt, GySgt, 2ndLt, 1stLt, Capt, WO1, CWO2–CWO5. (Pay grades E6–E7, O1–O3, W1–W5.)</li>
+      <li><b>OOD ranks:</b> SSgt, GySgt, 2ndLt, 1stLt, Capt, WO1, CWO2, CWO3. (Pay grades E6–E7, O1–O3, W1–W3.) CWO4/CWO5 and senior SNCOs (MSgt+) are <b>not</b> eligible.</li>
       <li><b>AOOD ranks:</b> Cpl, Sgt (E4–E5) — sourced from HQ/CSSC only.</li>
-      <li><b>Present for duty:</b> a Marine is excluded if their duty status shows an absence (leave, TAD, deployment, school, legal, medical, limited/light duty, etc.).</li>
-      <li><b>End-date rule:</b> anyone whose status/absence <b>end date runs past the end of the target month</b> is not counted that month.</li>
-      <li><b>Unit → section:</b> 20141-H → HQ, 20141-S → CSSC, 20371-1…8 → G1…G8, CMST and SSEC as listed.</li>
+      <li><b>Present for duty:</b> uses the <b>Category</b> column — <i>On Hand</i> counts (including short Range/Field details). TAD, Leave, Legal, Medical, Other are absences.</li>
+      <li><b>Return / end-date rule:</b> a Marine on an absence is counted only if they return with <b>≥5 days left in the month</b>; anyone whose absence runs past the end of the month is not counted.</li>
+      <li><b>Unit → section:</b> 20141-H… → HQ, 20141-S… → CSSC, 20371-1…8 → G1…G8, CMST and SSEC as listed. (The <i>EDD</i> column is ignored — only Duty Status + Start/End Date drive screening.)</li>
     </ul>
-    <p class="small muted">The parser is tolerant of column-header wording (Rank/Grade, Unit/RUC/MCC, Status/Duty, End/Return/RTD, Name). After upload, verify the counts and override any cell — then allocate.</p></div>
+    <p class="small muted">Columns auto-detected: Rank, Unit, Category, Duty Status, End Date, Name. Upload your MSB file (fills HQ/CSSC) and your MEF CE file (fills the G-shops) — each upload only updates the sections it contains. Verify the counts and override any cell, then allocate.</p></div>
   <div class="card"><h2>Allocation method (per the Bn Duty Order)</h2>
     <ul style="line-height:1.7;">
       <li>MSB owns days 1–15 (and the 31st on long months); MEF CE owns 16–30.</li>
